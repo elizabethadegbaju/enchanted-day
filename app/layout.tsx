@@ -7,6 +7,9 @@ import { useState } from 'react'
 import AuthWrapper from './AuthWrapper';
 import outputs from "@/amplify_outputs.json";
 import { Amplify } from 'aws-amplify'
+import { ThemeProvider } from '@aws-amplify/ui-react'
+import '@aws-amplify/ui-react/styles.css'
+import './globals.css'
 
 Amplify.configure(outputs);
 
@@ -28,11 +31,13 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <QueryClientProvider client={queryClient}>
-          <ChakraProvider theme={theme}>
-            <AuthWrapper>
-              {children}
-            </AuthWrapper>
-          </ChakraProvider>
+          <ThemeProvider>
+            <ChakraProvider theme={theme}>
+              <AuthWrapper>
+                {children}
+              </AuthWrapper>
+            </ChakraProvider>
+          </ThemeProvider>
         </QueryClientProvider>
       </body>
     </html>
