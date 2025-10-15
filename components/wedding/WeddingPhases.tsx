@@ -30,10 +30,10 @@ import {
   AlertTriangle
 } from 'lucide-react'
 
-import { WeddingPhase } from '@/types';
+import { UIWeddingPhase } from '@/types';
 
 interface WeddingPhasesProps {
-  phases: WeddingPhase[]
+  phases: UIWeddingPhase[]
 }
 
 export const WeddingPhases: React.FC<WeddingPhasesProps> = ({ phases }) => {
@@ -109,11 +109,11 @@ export const WeddingPhases: React.FC<WeddingPhasesProps> = ({ phases }) => {
                   <HStack spacing={6} fontSize="sm" color="neutral.600">
                     <HStack spacing={1}>
                       <Calendar size={14} />
-                      <Text>{new Date(phase.date).toLocaleDateString()}</Text>
+                      <Text>{(phase.date instanceof Date ? phase.date : new Date(phase.date)).toLocaleDateString()}</Text>
                     </HStack>
                     <HStack spacing={1}>
                       <MapPin size={14} />
-                      <Text>Venue: {(phase as any)?.venue || 'TBD'}</Text>
+                      <Text>Venue: {phase.venue?.name || 'TBD'}</Text>
                     </HStack>
                     <HStack spacing={1}>
                       <Users size={14} />
@@ -267,7 +267,7 @@ export const WeddingPhases: React.FC<WeddingPhasesProps> = ({ phases }) => {
               
               <VStack spacing={1}>
                 <Text fontSize="lg" fontWeight="bold" color="accent.700">
-                  {Math.ceil((new Date(phases[0]?.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
+                  {Math.ceil((new Date((phases[0]?.date instanceof Date ? phases[0]?.date : new Date(phases[0]?.date || ''))).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
                 </Text>
                 <Text fontSize="xs" color="accent.600">Days to First Event</Text>
               </VStack>

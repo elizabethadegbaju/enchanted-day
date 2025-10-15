@@ -294,7 +294,7 @@ export const WeddingOverview: React.FC<WeddingOverviewProps> = ({ wedding }) => 
                     <VStack spacing={2} align="stretch" fontSize="sm">
                       <HStack spacing={2}>
                         <Calendar size={14} color="var(--chakra-colors-neutral-500)" />
-                        <Text>{phase.date.toLocaleDateString()}</Text>
+                        <Text>{typeof phase.date === 'string' ? phase.date : phase.date.toLocaleDateString()}</Text>
                       </HStack>
                       <HStack spacing={2}>
                         <MapPin size={14} color="var(--chakra-colors-neutral-500)" />

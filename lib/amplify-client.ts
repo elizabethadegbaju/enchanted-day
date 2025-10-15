@@ -105,7 +105,7 @@ export class AmplifyDataClient {
       const overallBudget = await this.getOverallBudget(id);
       // Import the transform function here to avoid circular dependency
       const { transformWeddingForComponents } = await import('@/types');
-      return transformWeddingForComponents(wedding, overallBudget || undefined);
+      return transformWeddingForComponents(wedding);
     } catch (error) {
       console.error('Failed to fetch wedding for components:', error);
       throw error;

@@ -31,7 +31,7 @@ import { WeddingOverview } from '@/components/wedding/WeddingOverview'
 import { WeddingTimeline } from '@/components/wedding/WeddingTimeline'
 import { WeddingPhases } from '@/components/wedding/WeddingPhases'
 import { WeddingBudgetTracker } from '@/components/wedding/WeddingBudgetTracker'
-import { transformWeddingForComponents } from '@/types'
+import { createMockUIWedding, UIWedding } from '@/types';
 import { 
   Calendar, 
   Users, 
@@ -46,64 +46,7 @@ export default function WeddingDetailPage() {
   const weddingId = params.id as string
   
   // Mock data - will be replaced with real API calls
-  const wedding = {
-    id: weddingId,
-    coupleNames: ['Sarah Johnson', 'Michael Chen'],
-    couple_names: ['Sarah Johnson', 'Michael Chen'],
-    weddingType: 'MULTI_PHASE' as const,
-    wedding_type: 'MULTI_PHASE' as const,
-    status: 'PLANNING' as const,
-    phases: [
-      {
-        id: 1,
-        name: 'Legal Ceremony',
-        date: new Date('2024-06-10'),
-        status: 'planning',
-        progress: 75,
-        venue: { name: 'City Hall', address: '123 Main St' },
-        guestCount: 20,
-        guest_count: 20,
-      },
-      {
-        id: 2,
-        name: 'Church Wedding',
-        date: new Date('2024-06-15'),
-        status: 'planning',
-        progress: 60,
-        venue: { name: "St. Mary's Church", address: '456 Oak Ave' },
-        guestCount: 150,
-        guest_count: 150,
-      },
-      {
-        id: 3,
-        name: 'Reception',
-        date: new Date('2024-06-15'),
-        status: 'planning',
-        progress: 45,
-        venue: { name: 'Grand Ballroom', address: '789 Pine St' },
-        guestCount: 150,
-        guest_count: 150,
-      },
-    ],
-    overallBudget: {
-      total: 50000,
-      allocated: 45000,
-      spent: 25000,
-      remaining: 25000,
-      currency: 'USD',
-    },
-    overall_budget: {
-      total: 50000,
-      allocated: 45000,
-      spent: 25000,
-      remaining: 25000,
-      currency: 'USD',
-    },
-    culturalTraditions: ['Chinese', 'American'],
-    cultural_traditions: ['Chinese', 'American'],
-    days_until_wedding: 60,
-    overall_progress: 60,
-  }
+  const wedding = createMockUIWedding(weddingId)
 
   const stats = {
     totalVendors: 12,
@@ -138,10 +81,10 @@ export default function WeddingDetailPage() {
                       {wedding.coupleNames.join(' & ')}
                     </Text>
                     <Badge colorScheme="brand" size="lg">
-                      {wedding.weddingType === 'MULTI_PHASE' ? 'Multi-Phase' : 'Single Event'}
+                      {wedding.weddingType === 'multi-phase' ? 'Multi-Phase' : 'Single Event'}
                     </Badge>
                     <Badge 
-                      colorScheme={wedding.status === 'PLANNING' ? 'blue' : 'green'} 
+                      colorScheme={wedding.status === 'planning' ? 'blue' : 'green'} 
                       size="lg"
                       textTransform="capitalize"
                     >
@@ -162,10 +105,10 @@ export default function WeddingDetailPage() {
                         {wedding.phases.length} phases
                       </Text>
                     </HStack>
-                    {wedding.culturalTraditions.length > 0 && (
+                    {(wedding.culturalTraditions?.length || 0) > 0 && (
                       <HStack spacing={1}>
                         <Text fontSize="sm" color="neutral.600">
-                          Traditions: {wedding.culturalTraditions.join(', ')}
+                          Traditions: {wedding.culturalTraditions?.join(', ')}
                         </Text>
                       </HStack>
                     )}
@@ -280,7 +223,7 @@ export default function WeddingDetailPage() {
                         <HStack spacing={4} fontSize="sm" color="neutral.600">
                           <HStack spacing={1}>
                             <Calendar size={14} />
-                            <Text>{phase.date.toLocaleDateString()}</Text>
+                            <Text>{(phase.date instanceof Date ? phase.date : new Date(phase.date)).toLocaleDateString()}</Text>
                           </HStack>
                           <HStack spacing={1}>
                             <Users size={14} />
@@ -399,7 +342,7 @@ export default function WeddingDetailPage() {
 
               <TabPanels>
                 <TabPanel>
-                  <WeddingOverview wedding={transformWeddingForComponents(wedding as any)} />
+                  <WeddingOverview wedding={wedding as any} />
                 </TabPanel>
                 
                 <TabPanel>

@@ -21,15 +21,15 @@ import { WeddingPhaseSetup } from '@/components/wedding/WeddingPhaseSetup'
 import { WeddingBudgetSetup } from '@/components/wedding/WeddingBudgetSetup'
 import { WeddingPreferences } from '@/components/wedding/WeddingPreferences'
 import { WeddingReview } from '@/components/wedding/WeddingReview'
-import type { WeddingPhase, BudgetInfo, WeddingPreferences as WeddingPrefs } from '@/types'
+import type { UIWeddingPhase, UIBudgetInfo, UIWeddingPreferences } from '@/types'
 
-interface WeddingFormData {
+interface LocalWeddingFormData {
   coupleNames: string[]
   weddingType: 'single-event' | 'multi-phase'
-  phases: Partial<WeddingPhase>[]
-  overallBudget: Partial<BudgetInfo>
+  phases: Partial<UIWeddingPhase>[]
+  overallBudget: Partial<UIBudgetInfo>
   culturalTraditions: string[]
-  preferences: Partial<WeddingPrefs>
+  preferences: Partial<UIWeddingPreferences>
 }
 
 const STEPS = [
@@ -43,7 +43,7 @@ const STEPS = [
 
 export default function CreateWeddingPage() {
   const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState<WeddingFormData>({
+  const [formData, setFormData] = useState<LocalWeddingFormData>({
     coupleNames: ['', ''],
     weddingType: 'single-event',
     phases: [],
@@ -56,16 +56,16 @@ export default function CreateWeddingPage() {
     },
     culturalTraditions: [],
     preferences: {
-      cultural_traditions: [],
-      style_keywords: [],
+      culturalTraditions: [],
+      styleKeywords: [],
     },
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
   const toast = useToast()
 
-  const updateFormData = (updates: Partial<WeddingFormData>) => {
-    setFormData((prev: WeddingFormData) => ({ ...prev, ...updates }))
+  const updateFormData = (updates: Partial<LocalWeddingFormData>) => {
+    setFormData((prev: LocalWeddingFormData) => ({ ...prev, ...updates }))
   }
 
   const nextStep = () => {
@@ -132,8 +132,8 @@ export default function CreateWeddingPage() {
         return (
           <WeddingPhaseSetup
             weddingType={formData.weddingType}
-            phases={formData.phases}
-            onUpdate={(phases) => updateFormData({ phases })}
+            phases={formData.phases as any}
+            onUpdate={(phases) => updateFormData({ phases: phases as any })}
           />
         )
       case 4:
