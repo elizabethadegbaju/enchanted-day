@@ -1,8 +1,4 @@
-import { Wedding } from '@/types/wedding';
-import { Vendor } from '@/types/vendor';
-import { Guest } from '@/types/guest';
-import { CognitoAuth } from '@/lib/cognito-auth';
-
+import { Wedding, Vendor, Guest } from '@/types';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export interface ApiError {
@@ -46,84 +42,13 @@ export interface StreamingWorkflowChunk {
 class ApiClient {
   private baseURL: string;
   private token: string | null = null;
-  private cognitoAuth: CognitoAuth;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
-    this.cognitoAuth = new CognitoAuth();
-  }
+    }
 
   async setAuthToken(token: string) {
     this.token = token;
-  }
-
-  private async getAuthToken(): Promise<string | null> {
-    console.log('Getting auth token...')
-    
-    if (this.token && !this.cognitoAuth.isTokenExpired(this.token)) {
-      console.log('Using cached token')
-      return this.token;
-    }
-
-    try {
-      const storedToken = this.cognitoAuth.getIdToken();
-      console.log('Stored token exists:', !!storedToken)
-      
-      if (storedToken && !this.cognitoAuth.isTokenExpired(storedToken)) {
-        console.log('Using stored token')
-        this.token = storedToken;
-        return this.token;
-      }
-      
-      console.log('Token expired or not found, checking refresh token')
-      // Token expired, try to refresh
-      if (this.cognitoAuth.getRefreshToken()) {
-        console.log('Attempting to refresh token')
-        const newToken = await this.refreshAuthToken();
-        return newToken;
-      }
-      
-      console.log('No valid token or refresh token found')
-      return null;
-    } catch (error) {
-      console.error('Failed to get auth token:', error);
-      return null;
-    }
-  }
-
-  private async refreshAuthToken(): Promise<string> {
-    try {
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
-
-      const response = await fetch(`${this.baseURL}/auth/refresh-token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: refreshToken })
-      });
-
-      if (!response.ok) {
-        throw new Error('Token refresh failed');
-      }
-
-      const data = await response.json();
-      const newIdToken = data.data.id_token;
-      
-      localStorage.setItem('idToken', newIdToken);
-      localStorage.setItem('accessToken', data.data.access_token);
-      
-      this.token = newIdToken;
-      return newIdToken;
-    } catch (error) {
-      console.error('Failed to refresh auth token:', error);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('idToken');
-      localStorage.removeItem('refreshToken');
-      window.location.href = '/auth/login';
-      throw error;
-    }
   }
 
   async request<T>(
@@ -143,63 +68,11 @@ class ApiClient {
       Object.assign(headers, additionalHeaders);
     }
 
-    // Get auth token - required for all API calls
-    const token = await this.getAuthToken();
-    if (!token) {
-      console.warn('No auth token available, redirecting to login');
-      this.redirectToLogin();
-      throw new Error('Authentication required');
-    }
-    
-    headers['Authorization'] = `Bearer ${token}`;
-
     try {
       const response = await fetch(url, {
         ...options,
         headers,
       });
-
-      // Handle 401 Unauthorized - try to refresh token once
-      if (response.status === 401 && retryCount === 0) {
-        console.log('Received 401, attempting token refresh');
-        try {
-          const newToken = await this.refreshAuthToken();
-          headers['Authorization'] = `Bearer ${newToken}`;
-          
-          const retryResponse = await fetch(url, {
-            ...options,
-            headers,
-          });
-          
-          if (retryResponse.ok) {
-            const retryData = await retryResponse.json();
-            return {
-              success: true,
-              data: retryData.data,
-              count: retryData.count
-            };
-          } else if (retryResponse.status === 401) {
-            console.error('Still unauthorized after token refresh');
-            this.redirectToLogin();
-            throw new Error('Authentication failed');
-          }
-        } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
-          this.redirectToLogin();
-          throw new Error('Authentication failed');
-        }
-      }
-      
-      if (response.status === 401) {
-        console.error('Unauthorized access, redirecting to login');
-        this.redirectToLogin();
-        throw new Error('Authentication required');
-      }
-      
-      if (response.status === 403) {
-        console.error('Access forbidden');
-        throw new Error('Access denied. Please check your permissions.');
-      }
 
       const data = await response.json();
 
@@ -331,14 +204,9 @@ class ApiClient {
   }
 
   async streamChatWithAI(weddingId: string, message: string): Promise<ReadableStream<Uint8Array>> {
-    const token = await this.getAuthToken();
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
-    
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
 
     const response = await fetch(`${this.baseURL}/weddings/${weddingId}/ai-chat/stream`, {
       method: 'POST',
@@ -528,15 +396,10 @@ class ApiClient {
   }
 
   async streamGuestInquiry(guestId: string, inquiry: string, urgency: string = 'medium'): Promise<ReadableStream<Uint8Array>> {
-    const token = await this.getAuthToken();
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
     
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
     const response = await fetch(`${this.baseURL}/guests/${guestId}/inquiry`, {
       method: 'POST',
       headers,
@@ -580,14 +443,9 @@ class ApiClient {
   }
 
   async streamWeddingChat(weddingId: string, message: string): Promise<ReadableStream<Uint8Array>> {
-    const token = await this.getAuthToken();
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
-    
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
 
     const response = await fetch(`${this.baseURL}/weddings/${weddingId}/chat/stream`, {
       method: 'POST',
@@ -646,14 +504,9 @@ class ApiClient {
     message: string;
     weddingId: string;
   }): Promise<ReadableStream<Uint8Array>> {
-    const token = await this.getAuthToken();
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
-    
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
 
     const response = await fetch(`${this.baseURL}/vendors/${vendorId}/chat/stream`, {
       method: 'POST',

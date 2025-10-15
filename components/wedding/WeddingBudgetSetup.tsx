@@ -27,8 +27,9 @@ import { Plus, Trash2, DollarSign } from 'lucide-react'
 import type { BudgetInfo, BudgetCategory } from '@/types'
 
 interface WeddingBudgetSetupProps {
-  budget: Partial<BudgetInfo>
-  onUpdate: (budget: Partial<BudgetInfo>) => void
+  budget: any
+  updateBudget: (updates: any) => void
+  onUpdate?: (updates: any) => void
 }
 
 const CURRENCY_OPTIONS = [
@@ -57,6 +58,7 @@ const DEFAULT_CATEGORIES = [
 
 export const WeddingBudgetSetup: React.FC<WeddingBudgetSetupProps> = ({
   budget,
+  updateBudget,
   onUpdate,
 }) => {
   const toast = useToast()
@@ -64,12 +66,13 @@ export const WeddingBudgetSetup: React.FC<WeddingBudgetSetupProps> = ({
 
   const selectedCurrency = CURRENCY_OPTIONS.find(c => c.code === budget.currency) || CURRENCY_OPTIONS[0]
 
-  const updateBudget = (updates: Partial<BudgetInfo>) => {
-    onUpdate({ ...budget, ...updates })
+  const handleBudgetUpdate = (updates: any) => {
+    updateBudget(updates)
+    onUpdate?.({ ...budget, ...updates })
   }
 
-  const updateCategory = (index: number, updates: Partial<BudgetCategory>) => {
-    const categories = [...(budget.categories || [])]
+  const updateCategory = (index: number, updates: any) => {
+    const categories = [...((budget as any).categories || [])]
     categories[index] = { ...categories[index], ...updates }
     updateBudget({ categories })
   }
@@ -87,7 +90,7 @@ export const WeddingBudgetSetup: React.FC<WeddingBudgetSetupProps> = ({
       return
     }
 
-    const newCategory: BudgetCategory = {
+    const newCategory: any = {
       name: '',
       allocated: 0,
       spent: 0,
@@ -98,13 +101,13 @@ export const WeddingBudgetSetup: React.FC<WeddingBudgetSetupProps> = ({
   const removeCategory = (index: number) => {
     const categories = budget.categories || []
     if (categories.length > 1) {
-      updateBudget({ categories: categories.filter((_, i) => i !== index) })
+      updateBudget({ categories: categories.filter((_: any, i: number) => i !== index) })
     }
   }
 
   const applyDefaultCategories = () => {
     const total = budget.total || 0
-    const categories: BudgetCategory[] = DEFAULT_CATEGORIES.map(cat => ({
+    const categories: any[] = DEFAULT_CATEGORIES.map(cat => ({
       name: cat.name,
       allocated: Math.round((total * cat.percentage) / 100),
       spent: 0,
@@ -117,7 +120,7 @@ export const WeddingBudgetSetup: React.FC<WeddingBudgetSetupProps> = ({
     setUseDefaultCategories(false)
   }
 
-  const totalAllocated = (budget.categories || []).reduce((sum, cat) => sum + (cat.allocated || 0), 0)
+  const totalAllocated = (budget.categories || []).reduce((sum: number, cat: any) => sum + (cat.allocated || 0), 0)
   // const totalSpent = (budget.categories || []).reduce((sum, cat) => sum + (cat.spent || 0), 0)
   const allocationPercentage = budget.total ? (totalAllocated / budget.total) * 100 : 0
 
@@ -242,7 +245,7 @@ export const WeddingBudgetSetup: React.FC<WeddingBudgetSetupProps> = ({
 
             {budget.categories && budget.categories.length > 0 && (
               <VStack spacing={4} align="stretch">
-                {budget.categories.map((category, index) => (
+                {budget.categories.map((category: any, index: number) => (
                   <Card key={index} variant="outline">
                     <CardBody p={4}>
                       <VStack spacing={4} align="stretch">

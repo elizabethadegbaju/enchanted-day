@@ -71,10 +71,10 @@ export function CreateMoodBoardModal({
     setIsSubmitting(true)
     
     try {
-      const moodBoardData: Partial<MoodBoard> = {
+      const moodBoardData: any = {
         name: data.name,
         description: data.description || '',
-        phaseId: data.phaseId || undefined,
+        phase_id: data.phaseId || undefined,
         images: [],
         videos: [],
         links: [],

@@ -31,6 +31,7 @@ import { WeddingOverview } from '@/components/wedding/WeddingOverview'
 import { WeddingTimeline } from '@/components/wedding/WeddingTimeline'
 import { WeddingPhases } from '@/components/wedding/WeddingPhases'
 import { WeddingBudgetTracker } from '@/components/wedding/WeddingBudgetTracker'
+import { transformWeddingForComponents } from '@/types'
 import { 
   Calendar, 
   Users, 
@@ -48,148 +49,60 @@ export default function WeddingDetailPage() {
   const wedding = {
     id: weddingId,
     coupleNames: ['Sarah Johnson', 'Michael Chen'],
-    weddingType: 'multi-phase' as const,
-    status: 'planning' as const,
+    couple_names: ['Sarah Johnson', 'Michael Chen'],
+    weddingType: 'MULTI_PHASE' as const,
+    wedding_type: 'MULTI_PHASE' as const,
+    status: 'PLANNING' as const,
     phases: [
       {
-        id: '1',
+        id: 1,
         name: 'Legal Ceremony',
         date: new Date('2024-06-10'),
-        venue: { name: 'City Hall', address: '123 Main St' },
-        budget: {
-          total: 5000,
-          allocated: 4500,
-          spent: 2500,
-          currency: 'USD',
-          categories: [
-            { name: 'Venue', allocated: 2000, spent: 2000 },
-            { name: 'Photography', allocated: 1500, spent: 500 },
-            { name: 'Flowers', allocated: 1000, spent: 0 }
-          ]
-        },
-        specificRequirements: { legal: true, witnesses: 2 },
-        vendors: ['vendor1', 'vendor2'],
-        guests: ['guest1', 'guest2'],
-        timeline: { ceremony: '10:00 AM' },
+        status: 'planning',
         progress: 75,
+        venue: { name: 'City Hall', address: '123 Main St' },
         guestCount: 20,
+        guest_count: 20,
       },
       {
-        id: '2',
+        id: 2,
         name: 'Church Wedding',
         date: new Date('2024-06-15'),
-        venue: { name: "St. Mary's Church", address: '456 Oak Ave' },
-        budget: {
-          total: 20000,
-          allocated: 18000,
-          spent: 10000,
-          currency: 'USD',
-          categories: [
-            { name: 'Venue', allocated: 5000, spent: 5000 },
-            { name: 'Music', allocated: 3000, spent: 1500 },
-            { name: 'Flowers', allocated: 4000, spent: 2000 },
-            { name: 'Photography', allocated: 6000, spent: 1500 }
-          ]
-        },
-        specificRequirements: { religious: true, denomination: 'Catholic' },
-        vendors: ['vendor3', 'vendor4', 'vendor5'],
-        guests: ['guest1', 'guest2', 'guest3'],
-        timeline: { ceremony: '2:00 PM' },
+        status: 'planning',
         progress: 60,
+        venue: { name: "St. Mary's Church", address: '456 Oak Ave' },
         guestCount: 150,
+        guest_count: 150,
       },
       {
-        id: '3',
+        id: 3,
         name: 'Reception',
         date: new Date('2024-06-15'),
-        venue: { name: 'Grand Ballroom', address: '789 Pine St' },
-        budget: {
-          total: 25000,
-          allocated: 22500,
-          spent: 12500,
-          currency: 'USD',
-          categories: [
-            { name: 'Catering', allocated: 15000, spent: 8000 },
-            { name: 'DJ/Entertainment', allocated: 3000, spent: 1500 },
-            { name: 'Decorations', allocated: 4500, spent: 3000 }
-          ]
-        },
-        specificRequirements: { openBar: true, danceFloor: true },
-        vendors: ['vendor6', 'vendor7', 'vendor8'],
-        guests: ['guest1', 'guest2', 'guest3'],
-        timeline: { cocktails: '5:00 PM', dinner: '7:00 PM', dancing: '9:00 PM' },
+        status: 'planning',
         progress: 45,
+        venue: { name: 'Grand Ballroom', address: '789 Pine St' },
         guestCount: 150,
+        guest_count: 150,
       },
     ],
     overallBudget: {
       total: 50000,
       allocated: 45000,
       spent: 25000,
+      remaining: 25000,
       currency: 'USD',
-      categories: [
-        { name: 'Venues', allocated: 12000, spent: 12000 },
-        { name: 'Catering', allocated: 15000, spent: 8000 },
-        { name: 'Photography', allocated: 7500, spent: 2000 },
-        { name: 'Flowers & Decorations', allocated: 5500, spent: 2000 },
-        { name: 'Music & Entertainment', allocated: 3000, spent: 1500 },
-        { name: 'Miscellaneous', allocated: 2000, spent: 500 }
-      ]
+    },
+    overall_budget: {
+      total: 50000,
+      allocated: 45000,
+      spent: 25000,
+      remaining: 25000,
+      currency: 'USD',
     },
     culturalTraditions: ['Chinese', 'American'],
-    preferences: {
-      style: ['Classic', 'Elegant'],
-      colors: ['Navy Blue', 'Gold', 'White'],
-      themes: ['Timeless Romance'],
-      musicGenres: ['Jazz', 'Classical', 'Contemporary'],
-      foodPreferences: ['Asian Fusion', 'American Classics'],
-      communicationPreferences: {
-        preferredChannels: ['email', 'text'],
-        frequency: 'weekly',
-        urgencyThreshold: 'medium'
-      }
-    },
-    moodBoards: [
-      {
-        id: 'mb1',
-        name: 'Ceremony Inspiration',
-        description: 'Elegant and timeless ceremony decorations',
-        images: [],
-        videos: [],
-        links: [],
-        colorPalette: {
-          primary: ['#1a365d', '#2d5aa0'],
-          secondary: ['#d69e2e', '#f7fafc'],
-          accent: ['#e53e3e'],
-          neutral: ['#718096', '#f7fafc']
-        },
-        styleKeywords: ['elegant', 'classic', 'romantic'],
-        phaseId: '2',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ],
-    timeline: {
-      milestones: [
-        { name: 'Venue Booked', date: '2024-01-15', completed: true },
-        { name: 'Invitations Sent', date: '2024-04-01', completed: false }
-      ],
-      deadlines: [
-        { name: 'Final Headcount', date: '2024-05-01', priority: 'high' },
-        { name: 'Menu Finalization', date: '2024-04-15', priority: 'medium' }
-      ],
-      dependencies: [
-        { task: 'Catering', dependsOn: 'Final Headcount' }
-      ],
-      contingencyPlans: [
-        { scenario: 'Rain', plan: 'Indoor ceremony backup' }
-      ]
-    },
-    createdBy: 'user123',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date(),
-    daysUntilWedding: 127,
-    overallProgress: 60,
+    cultural_traditions: ['Chinese', 'American'],
+    days_until_wedding: 60,
+    overall_progress: 60,
   }
 
   const stats = {
@@ -225,10 +138,10 @@ export default function WeddingDetailPage() {
                       {wedding.coupleNames.join(' & ')}
                     </Text>
                     <Badge colorScheme="brand" size="lg">
-                      {wedding.weddingType === 'multi-phase' ? 'Multi-Phase' : 'Single Event'}
+                      {wedding.weddingType === 'MULTI_PHASE' ? 'Multi-Phase' : 'Single Event'}
                     </Badge>
                     <Badge 
-                      colorScheme={wedding.status === 'planning' ? 'blue' : 'green'} 
+                      colorScheme={wedding.status === 'PLANNING' ? 'blue' : 'green'} 
                       size="lg"
                       textTransform="capitalize"
                     >
@@ -240,7 +153,7 @@ export default function WeddingDetailPage() {
                     <HStack spacing={1}>
                       <Calendar size={16} />
                       <Text fontSize="sm" color="neutral.600">
-                        {wedding.daysUntilWedding} days until wedding
+                        {wedding.days_until_wedding} days until wedding
                       </Text>
                     </HStack>
                     <HStack spacing={1}>
@@ -274,11 +187,11 @@ export default function WeddingDetailPage() {
                 <HStack justify="space-between">
                   <Text fontSize="sm" fontWeight="medium">Overall Progress</Text>
                   <Text fontSize="sm" color="neutral.600">
-                    {wedding.overallProgress}% Complete
+                    {wedding.overall_progress}% Complete
                   </Text>
                 </HStack>
                 <Progress
-                  value={wedding.overallProgress}
+                  value={wedding.overall_progress}
                   colorScheme="brand"
                   size="lg"
                   borderRadius="full"
@@ -486,15 +399,15 @@ export default function WeddingDetailPage() {
 
               <TabPanels>
                 <TabPanel>
-                  <WeddingOverview wedding={wedding} />
+                  <WeddingOverview wedding={transformWeddingForComponents(wedding as any)} />
                 </TabPanel>
                 
                 <TabPanel>
-                  <WeddingTimeline wedding={wedding} />
+                  <WeddingTimeline wedding={wedding as any} />
                 </TabPanel>
                 
                 <TabPanel>
-                  <WeddingPhases phases={wedding.phases} />
+                  <WeddingPhases phases={wedding.phases as any} />
                 </TabPanel>
                 
                 <TabPanel>

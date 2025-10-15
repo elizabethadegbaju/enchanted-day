@@ -23,15 +23,15 @@ import {
 } from '@chakra-ui/react'
 import { Calendar, MapPin, Users, DollarSign, Palette, Music, Utensils, MessageCircle } from 'lucide-react'
 
-import { WeddingPhase, BudgetInfo, WeddingPreferences } from '@/types/wedding';
+import { WeddingPhase, BudgetInfo, WeddingPreferences } from '@/types';
 
 interface WeddingFormData {
   coupleNames: string[]
   weddingType: 'single-event' | 'multi-phase'
-  phases: Partial<WeddingPhase>[]
-  overallBudget: Partial<BudgetInfo>
+  phases: any[]
+  overallBudget: any
   culturalTraditions: string[]
-  preferences: Partial<WeddingPreferences>
+  preferences: any
 }
 
 interface WeddingReviewProps {
@@ -47,7 +47,7 @@ export const WeddingReview: React.FC<WeddingReviewProps> = ({
 }) => {
   const { coupleNames, weddingType, phases, overallBudget, culturalTraditions, preferences } = formData
 
-  const totalAllocated = (overallBudget.categories || []).reduce((sum: number, cat) => sum + (cat.allocated || 0), 0)
+  const totalAllocated = (overallBudget.categories || []).reduce((sum: number, cat: any) => sum + (cat.allocated || 0), 0)
   const currencySymbol = overallBudget.currency === 'USD' ? '$' : 
                         overallBudget.currency === 'EUR' ? '€' : 
                         overallBudget.currency === 'GBP' ? '£' : 
@@ -73,7 +73,7 @@ export const WeddingReview: React.FC<WeddingReviewProps> = ({
   }
 
   const phasesWithMissingInfo = phases.filter(phase => 
-    !phase.name?.trim() || !phase.venue?.name?.trim()
+    !phase.name?.trim() || !(phase.venue as any)?.name?.trim()
   )
   
   if (phasesWithMissingInfo.length > 0) {
@@ -240,7 +240,7 @@ export const WeddingReview: React.FC<WeddingReviewProps> = ({
                 <VStack spacing={2} align="start">
                   <Text fontSize="sm" color="neutral.600">Budget Categories</Text>
                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={2} w="full">
-                    {overallBudget.categories.map((category, index: number) => (
+                    {overallBudget.categories.map((category: any, index: number) => (
                       <HStack key={index} justify="space-between">
                         <Text fontSize="sm">{category.name}</Text>
                         <Text fontSize="sm" fontWeight="medium">

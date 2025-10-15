@@ -51,21 +51,13 @@ export default function CreateWeddingPage() {
       total: 0,
       allocated: 0,
       spent: 0,
+      remaining: 0,
       currency: 'USD',
-      categories: [],
     },
     culturalTraditions: [],
     preferences: {
-      style: [],
-      colors: [],
-      themes: [],
-      musicGenres: [],
-      foodPreferences: [],
-      communicationPreferences: {
-        preferredChannels: ['email'],
-        frequency: 'regular',
-        urgencyThreshold: 'medium',
-      },
+      cultural_traditions: [],
+      style_keywords: [],
     },
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -148,6 +140,7 @@ export default function CreateWeddingPage() {
         return (
           <WeddingBudgetSetup
             budget={formData.overallBudget}
+            updateBudget={(overallBudget) => updateFormData({ overallBudget })}
             onUpdate={(overallBudget) => updateFormData({ overallBudget })}
           />
         )

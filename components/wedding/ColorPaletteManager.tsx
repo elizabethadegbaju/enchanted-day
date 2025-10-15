@@ -21,9 +21,16 @@ import { ChromePicker } from 'react-color'
 import { X, Palette, Copy } from 'lucide-react'
 import type { MoodBoard } from '@/types'
 
+interface LocalColorPalette {
+  primary: string[]
+  secondary: string[]
+  accent: string[]
+  neutral: string[]
+}
+
 interface ColorPaletteManagerProps {
-  colorPalette: MoodBoard['colorPalette']
-  onChange: (colorPalette: MoodBoard['colorPalette']) => void
+  colorPalette: LocalColorPalette
+  onChange: (colorPalette: LocalColorPalette) => void
 }
 
 type PaletteCategory = 'primary' | 'secondary' | 'accent' | 'neutral'
@@ -110,7 +117,7 @@ export function ColorPaletteManager({ colorPalette, onChange }: ColorPaletteMana
 
   const removeColor = (category: PaletteCategory, colorIndex: number) => {
     const currentColors = colorPalette[category] || []
-    const updatedColors = currentColors.filter((_, index) => index !== colorIndex)
+    const updatedColors = currentColors.filter((_: string, index: number) => index !== colorIndex)
     
     const updatedPalette = {
       ...colorPalette,
@@ -168,7 +175,7 @@ export function ColorPaletteManager({ colorPalette, onChange }: ColorPaletteMana
   }
 
   const getTotalColors = () => {
-    return Object.values(colorPalette).reduce((total, colors) => total + colors.length, 0)
+    return Object.values(colorPalette).reduce((total: number, colors: string[]) => total + colors.length, 0)
   }
 
   return (
@@ -280,7 +287,7 @@ export function ColorPaletteManager({ colorPalette, onChange }: ColorPaletteMana
               <VStack spacing={3} align="stretch">
                 {colorPalette[category]?.length > 0 ? (
                   <Wrap spacing={2}>
-                    {colorPalette[category].map((color, index) => (
+                    {colorPalette[category].map((color: string, index: number) => (
                       <WrapItem key={index}>
                         <Box position="relative" role="group">
                           <Box

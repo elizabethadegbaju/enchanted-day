@@ -26,8 +26,8 @@ import { Plus } from 'lucide-react'
 import type { WeddingPreferences as WeddingPrefs } from '@/types'
 
 interface WeddingPreferencesProps {
-  preferences: Partial<WeddingPrefs>
-  onUpdate: (preferences: Partial<WeddingPrefs>) => void
+  preferences: any
+  onUpdate: (preferences: any) => void
 }
 
 const STYLE_OPTIONS = [
@@ -113,11 +113,11 @@ export const WeddingPreferences: React.FC<WeddingPreferencesProps> = ({
   const [customMusic, setCustomMusic] = useState('')
   const [customFood, setCustomFood] = useState('')
 
-  const updatePreferences = (updates: Partial<WeddingPrefs>) => {
+  const updatePreferences = (updates: any) => {
     onUpdate({ ...preferences, ...updates })
   }
 
-  const addCustomItem = (category: keyof WeddingPrefs, value: string) => {
+  const addCustomItem = (category: string, value: string) => {
     if (!value.trim()) return
     
     const currentItems = (preferences[category] as string[]) || []
@@ -137,14 +137,14 @@ export const WeddingPreferences: React.FC<WeddingPreferencesProps> = ({
     }
   }
 
-  const removeItem = (category: keyof WeddingPrefs, value: string) => {
+  const removeItem = (category: string, value: string) => {
     const currentItems = (preferences[category] as string[]) || []
     updatePreferences({
       [category]: currentItems.filter(item => item !== value)
     })
   }
 
-  const toggleItem = (category: keyof WeddingPrefs, value: string) => {
+  const toggleItem = (category: string, value: string) => {
     const currentItems = (preferences[category] as string[]) || []
     if (currentItems.includes(value)) {
       removeItem(category, value)
@@ -175,7 +175,7 @@ export const WeddingPreferences: React.FC<WeddingPreferencesProps> = ({
             <FormControl>
               <FormLabel fontSize="sm">Wedding Styles (select all that apply)</FormLabel>
               <Wrap spacing={2} mb={4}>
-                {(preferences.style || []).map((style) => (
+                {(preferences.style || []).map((style: string) => (
                   <WrapItem key={style}>
                     <Tag size="md" colorScheme="brand" variant="solid">
                       <TagLabel>{style}</TagLabel>
@@ -188,7 +188,7 @@ export const WeddingPreferences: React.FC<WeddingPreferencesProps> = ({
               <Wrap spacing={2} mb={4}>
                 {STYLE_OPTIONS
                   .filter(style => !(preferences.style || []).includes(style))
-                  .map((style) => (
+                  .map((style: string) => (
                     <WrapItem key={style}>
                       <Button
                         size="sm"
@@ -230,7 +230,7 @@ export const WeddingPreferences: React.FC<WeddingPreferencesProps> = ({
             <FormControl>
               <FormLabel fontSize="sm">Preferred Colors</FormLabel>
               <Wrap spacing={2} mb={4}>
-                {(preferences.colors || []).map((color) => (
+                {(preferences.colors || []).map((color: string) => (
                   <WrapItem key={color}>
                     <Tag size="md" colorScheme="brand" variant="solid">
                       <TagLabel>{color}</TagLabel>
@@ -243,7 +243,7 @@ export const WeddingPreferences: React.FC<WeddingPreferencesProps> = ({
               <Wrap spacing={2} mb={4}>
                 {COLOR_OPTIONS
                   .filter(color => !(preferences.colors || []).includes(color))
-                  .map((color) => (
+                  .map((color: string) => (
                     <WrapItem key={color}>
                       <Button
                         size="sm"
@@ -285,7 +285,7 @@ export const WeddingPreferences: React.FC<WeddingPreferencesProps> = ({
             <FormControl>
               <FormLabel fontSize="sm">Wedding Themes</FormLabel>
               <Wrap spacing={2} mb={4}>
-                {(preferences.themes || []).map((theme) => (
+                {(preferences.themes || []).map((theme: string) => (
                   <WrapItem key={theme}>
                     <Tag size="md" colorScheme="brand" variant="solid">
                       <TagLabel>{theme}</TagLabel>
@@ -298,7 +298,7 @@ export const WeddingPreferences: React.FC<WeddingPreferencesProps> = ({
               <Wrap spacing={2} mb={4}>
                 {THEME_OPTIONS
                   .filter(theme => !(preferences.themes || []).includes(theme))
-                  .map((theme) => (
+                  .map((theme: string) => (
                     <WrapItem key={theme}>
                       <Button
                         size="sm"
@@ -339,7 +339,7 @@ export const WeddingPreferences: React.FC<WeddingPreferencesProps> = ({
               <Text fontSize="lg" fontWeight="semibold">Music Preferences</Text>
               
               <Wrap spacing={2} mb={3}>
-                {(preferences.musicGenres || []).map((genre) => (
+                {(preferences.musicGenres || []).map((genre: string) => (
                   <WrapItem key={genre}>
                     <Tag size="sm" colorScheme="accent" variant="solid">
                       <TagLabel>{genre}</TagLabel>
@@ -353,7 +353,7 @@ export const WeddingPreferences: React.FC<WeddingPreferencesProps> = ({
                 {MUSIC_GENRES
                   .filter(genre => !(preferences.musicGenres || []).includes(genre))
                   .slice(0, 8)
-                  .map((genre) => (
+                  .map((genre: string) => (
                     <WrapItem key={genre}>
                       <Button
                         size="xs"
@@ -392,7 +392,7 @@ export const WeddingPreferences: React.FC<WeddingPreferencesProps> = ({
               <Text fontSize="lg" fontWeight="semibold">Food Preferences</Text>
               
               <Wrap spacing={2} mb={3}>
-                {(preferences.foodPreferences || []).map((food) => (
+                {(preferences.foodPreferences || []).map((food: string) => (
                   <WrapItem key={food}>
                     <Tag size="sm" colorScheme="accent" variant="solid">
                       <TagLabel>{food}</TagLabel>
@@ -406,7 +406,7 @@ export const WeddingPreferences: React.FC<WeddingPreferencesProps> = ({
                 {FOOD_PREFERENCES
                   .filter(food => !(preferences.foodPreferences || []).includes(food))
                   .slice(0, 8)
-                  .map((food) => (
+                  .map((food: string) => (
                     <WrapItem key={food}>
                       <Button
                         size="xs"

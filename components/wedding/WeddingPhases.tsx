@@ -30,7 +30,7 @@ import {
   AlertTriangle
 } from 'lucide-react'
 
-import { WeddingPhase } from '@/types/wedding';
+import { WeddingPhase } from '@/types';
 
 interface WeddingPhasesProps {
   phases: WeddingPhase[]
@@ -109,15 +109,15 @@ export const WeddingPhases: React.FC<WeddingPhasesProps> = ({ phases }) => {
                   <HStack spacing={6} fontSize="sm" color="neutral.600">
                     <HStack spacing={1}>
                       <Calendar size={14} />
-                      <Text>{phase.date.toLocaleDateString()}</Text>
+                      <Text>{new Date(phase.date).toLocaleDateString()}</Text>
                     </HStack>
                     <HStack spacing={1}>
                       <MapPin size={14} />
-                      <Text>{phase.venue.name}</Text>
+                      <Text>Venue: {(phase as any)?.venue || 'TBD'}</Text>
                     </HStack>
                     <HStack spacing={1}>
                       <Users size={14} />
-                      <Text>{phase.guestCount ?? 0} guests</Text>
+                      <Text>{phase.guest_count ?? 0} guests</Text>
                     </HStack>
                   </HStack>
                 </VStack>
@@ -205,10 +205,10 @@ export const WeddingPhases: React.FC<WeddingPhasesProps> = ({ phases }) => {
                   <Stat>
                     <StatLabel fontSize="xs" color="neutral.600">Days Until</StatLabel>
                     <StatNumber fontSize="lg">
-                      {Math.ceil((phase.date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
+                      {Math.ceil((new Date(phase.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
                     </StatNumber>
                     <StatHelpText fontSize="xs">
-                      {phase.date.toLocaleDateString()}
+                      {new Date(phase.date).toLocaleDateString()}
                     </StatHelpText>
                   </Stat>
                 </SimpleGrid>
@@ -260,14 +260,14 @@ export const WeddingPhases: React.FC<WeddingPhasesProps> = ({ phases }) => {
               
               <VStack spacing={1}>
                 <Text fontSize="lg" fontWeight="bold" color="accent.700">
-                  {phases.reduce((sum, phase) => sum + (phase.guestCount ?? 0), 0)}
+                  {phases.reduce((sum, phase) => sum + (phase.guest_count ?? 0), 0)}
                 </Text>
                 <Text fontSize="xs" color="accent.600">Total Guests</Text>
               </VStack>
               
               <VStack spacing={1}>
                 <Text fontSize="lg" fontWeight="bold" color="accent.700">
-                  {Math.ceil((phases[0]?.date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
+                  {Math.ceil((new Date(phases[0]?.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
                 </Text>
                 <Text fontSize="xs" color="accent.600">Days to First Event</Text>
               </VStack>

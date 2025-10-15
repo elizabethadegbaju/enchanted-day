@@ -25,7 +25,50 @@ import { StyleKeywordManager } from '@/components/wedding/StyleKeywordManager'
 import { InspirationLinkManager } from '@/components/wedding/InspirationLinkManager'
 import { MediaGallery } from '@/components/wedding/MediaGallery'
 import { ArrowLeft, Edit, Share, Download, Plus } from 'lucide-react'
-import type { MoodBoard, InspirationLink } from '@/types'
+import type { MoodBoard, InspirationLink, MediaAsset, ColorPalette } from '@/types'
+
+// Define local interface that matches component expectations
+interface LocalMoodBoard {
+  id: string;
+  name: string;
+  description?: string;
+  images: LocalMediaAsset[];
+  videos: LocalMediaAsset[];
+  links: LocalInspirationLink[];
+  colorPalette: LocalColorPalette;
+  styleKeywords: string[];
+  phase_id?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface LocalMediaAsset {
+  id: number;
+  type: 'IMAGE' | 'VIDEO';
+  url: string;
+  s3_key: string;
+  filename: string;
+  tags?: string[];
+  uploaded_at: string;
+  metadata: any;
+}
+
+interface LocalInspirationLink {
+  id: number;
+  url: string;
+  title: string;
+  description: string;
+  source: string;
+  tags?: string[];
+  added_at: string;
+}
+
+interface LocalColorPalette {
+  primary: string[];
+  secondary: string[];
+  accent: string[];
+  neutral: string[];
+}
 
 export default function MoodBoardDetailPage() {
   const params = useParams()
@@ -36,42 +79,42 @@ export default function MoodBoardDetailPage() {
   const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure()
   
   // Mock data - will be replaced with real API calls
-  const [moodBoard, setMoodBoard] = useState<MoodBoard>({
+  const [moodBoard, setMoodBoard] = useState<LocalMoodBoard>({
     id: moodBoardId,
     name: 'Overall Wedding Vision',
     description: 'Main inspiration and color palette for the entire wedding',
     images: [
       {
-        id: '1',
-        type: 'image',
+        id: 1,
+        type: 'IMAGE',
         url: '/api/placeholder/400/300',
-        s3Key: 'wedding-1/mood-1.jpg',
+        s3_key: 'wedding-1/mood-1.jpg',
         filename: 'inspiration-1.jpg',
         tags: ['romantic', 'elegant', 'flowers'],
-        uploadedAt: new Date('2024-01-15'),
+        uploaded_at: '2024-01-15T00:00:00.000Z',
         metadata: { size: 1024000, format: 'jpg', dimensions: { width: 400, height: 300 } }
       },
       {
-        id: '2',
-        type: 'image',
+        id: 2,
+        type: 'IMAGE',
         url: '/api/placeholder/400/300',
-        s3Key: 'wedding-1/mood-2.jpg',
+        s3_key: 'wedding-1/mood-2.jpg',
         filename: 'inspiration-2.jpg',
         tags: ['decor', 'table-setting'],
-        uploadedAt: new Date('2024-01-16'),
+        uploaded_at: '2024-01-16T00:00:00.000Z',
         metadata: { size: 1024000, format: 'jpg', dimensions: { width: 400, height: 300 } }
       }
     ],
     videos: [],
     links: [
       {
-        id: '1',
+        id: 1,
         url: 'https://pinterest.com/pin/123',
         title: 'Elegant Garden Wedding',
         description: 'Beautiful outdoor ceremony setup with romantic lighting',
         source: 'Pinterest',
         tags: ['garden', 'outdoor', 'ceremony'],
-        addedAt: new Date('2024-01-17')
+        added_at: '2024-01-17T00:00:00.000Z'
       }
     ],
     colorPalette: {
@@ -93,8 +136,8 @@ export default function MoodBoardDetailPage() {
     onUploadClose()
   }
 
-  const handleColorPaletteUpdate = (colorPalette: MoodBoard['colorPalette']) => {
-    setMoodBoard((prev: MoodBoard) => ({
+  const handleColorPaletteUpdate = (colorPalette: LocalColorPalette) => {
+    setMoodBoard((prev: LocalMoodBoard) => ({
       ...prev,
       colorPalette,
       updatedAt: new Date()
@@ -102,23 +145,33 @@ export default function MoodBoardDetailPage() {
   }
 
   const handleStyleKeywordsUpdate = (styleKeywords: string[]) => {
-    setMoodBoard((prev: MoodBoard) => ({
+    setMoodBoard((prev: LocalMoodBoard) => ({
       ...prev,
       styleKeywords,
       updatedAt: new Date()
     }))
   }
 
-  const handleInspirationLinksUpdate = (links: InspirationLink[]) => {
-    setMoodBoard((prev: MoodBoard) => ({
+  const handleInspirationLinksUpdate = (links: any[]) => {
+    const localLinks: LocalInspirationLink[] = links.map(link => ({
+      id: link.id,
+      url: link.url,
+      title: link.title,
+      description: link.description,
+      source: link.source,
+      tags: link.tags || [],
+      added_at: link.added_at || new Date().toISOString()
+    }))
+    
+    setMoodBoard((prev: LocalMoodBoard) => ({
       ...prev,
-      links,
+      links: localLinks,
       updatedAt: new Date()
     }))
   }
 
-  const handleMediaDelete = (mediaId: string) => {
-    setMoodBoard((prev: MoodBoard) => ({
+  const handleMediaDelete = (mediaId: number) => {
+    setMoodBoard((prev: LocalMoodBoard) => ({
       ...prev,
       images: prev.images.filter(img => img.id !== mediaId),
       videos: prev.videos.filter(vid => vid.id !== mediaId),
@@ -155,7 +208,7 @@ export default function MoodBoardDetailPage() {
                     <Text fontSize="2xl" fontWeight="bold">
                       {moodBoard.name}
                     </Text>
-                    {moodBoard.phaseId && (
+                    {moodBoard.phase_id && (
                       <Badge colorScheme="brand">Phase Specific</Badge>
                     )}
                   </HStack>

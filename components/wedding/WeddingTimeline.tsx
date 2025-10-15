@@ -23,7 +23,7 @@ import {
   Edit
 } from 'lucide-react'
 
-import { Wedding } from '@/types/wedding';
+import { Wedding } from '@/types';
 
 interface WeddingTimelineProps {
   wedding: Wedding

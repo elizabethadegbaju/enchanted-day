@@ -81,10 +81,10 @@ export const WeddingPhaseSetup: React.FC<WeddingPhaseSetupProps> = ({
       return
     }
 
-    const newPhase: Partial<WeddingPhase> = {
-      id: `phase-${Date.now()}`,
+    const newPhase: any = {
+      id: Date.now(),
       name: template?.name || '',
-      date: new Date(),
+      date: new Date().toISOString().split('T')[0],
       venue: {
         id: '',
         name: '',
@@ -232,9 +232,9 @@ export const WeddingPhaseSetup: React.FC<WeddingPhaseSetupProps> = ({
                     <FormLabel fontSize="sm">Date</FormLabel>
                     <Input
                       type="date"
-                      value={phase.date ? phase.date.toISOString().split('T')[0] : ''}
+                      value={phase.date || ''}
                       onChange={(e) => updatePhase(index, { 
-                        date: new Date(e.target.value) 
+                        date: e.target.value 
                       })}
                     />
                   </FormControl>
@@ -254,9 +254,9 @@ export const WeddingPhaseSetup: React.FC<WeddingPhaseSetupProps> = ({
                       <FormLabel fontSize="sm">Venue Name</FormLabel>
                       <Input
                         placeholder="e.g., St. Mary's Church, Grand Ballroom"
-                        value={phase.venue?.name || ''}
+                        value={(phase.venue as any)?.name || ''}
                         onChange={(e) => updatePhase(index, {
-                          venue: { ...phase.venue!, name: e.target.value }
+                          venue: { ...(phase.venue as any) || {}, name: e.target.value }
                         })}
                       />
                     </FormControl>
@@ -265,9 +265,9 @@ export const WeddingPhaseSetup: React.FC<WeddingPhaseSetupProps> = ({
                       <FormLabel fontSize="sm">Venue Type</FormLabel>
                       <Select
                         placeholder="Select type"
-                        value={(phase.venue?.type as string) || ''}
+                        value={(phase.venue as any)?.type || ''}
                         onChange={(e) => updatePhase(index, {
-                          venue: { ...phase.venue!, type: e.target.value }
+                          venue: { ...(phase.venue as any) || {}, type: e.target.value }
                         })}
                       >
                         {VENUE_TYPES.map((type) => (
@@ -281,9 +281,9 @@ export const WeddingPhaseSetup: React.FC<WeddingPhaseSetupProps> = ({
                     <FormLabel fontSize="sm">Address</FormLabel>
                     <Textarea
                       placeholder="Full venue address"
-                      value={phase.venue?.address || ''}
+                      value={(phase.venue as any)?.address || ''}
                       onChange={(e) => updatePhase(index, {
-                        venue: { ...phase.venue!, address: e.target.value }
+                        venue: { ...(phase.venue as any) || {}, address: e.target.value }
                       })}
                       rows={2}
                     />
@@ -305,13 +305,13 @@ export const WeddingPhaseSetup: React.FC<WeddingPhaseSetupProps> = ({
                       <NumberInput
                         min={1}
                         max={1000}
-                        value={(phase.specificRequirements?.guestCount as number) || 100}
+                        value={(phase as any).specificRequirements?.guestCount || 100}
                         onChange={(_, value) => updatePhase(index, {
                           specificRequirements: {
-                            ...phase.specificRequirements!,
+                            ...(phase as any).specificRequirements || {},
                             guestCount: value || 100
                           }
-                        })}
+                        } as any)}
                       >
                         <NumberInputField />
                         <NumberInputStepper>
@@ -326,13 +326,13 @@ export const WeddingPhaseSetup: React.FC<WeddingPhaseSetupProps> = ({
                       <NumberInput
                         min={1}
                         max={24}
-                        value={(phase.specificRequirements?.duration as number) || 4}
+                        value={(phase as any).specificRequirements?.duration || 4}
                         onChange={(_, value) => updatePhase(index, {
                           specificRequirements: {
-                            ...phase.specificRequirements!,
+                            ...(phase as any).specificRequirements || {},
                             duration: value || 4
                           }
-                        })}
+                        } as any)}
                       >
                         <NumberInputField />
                         <NumberInputStepper>
@@ -347,9 +347,9 @@ export const WeddingPhaseSetup: React.FC<WeddingPhaseSetupProps> = ({
                       <NumberInput
                         min={1}
                         max={2000}
-                        value={(phase.venue?.capacity as number) || 100}
+                        value={(phase.venue as any)?.capacity || 100}
                         onChange={(_, value) => updatePhase(index, {
-                          venue: { ...phase.venue!, capacity: value || 100 }
+                          venue: { ...(phase.venue as any) || {}, capacity: value || 100 }
                         })}
                       >
                         <NumberInputField />

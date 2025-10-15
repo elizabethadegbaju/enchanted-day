@@ -30,8 +30,8 @@ export function MoodBoardCard({ moodBoard, onView, onEdit }: MoodBoardCardProps)
   const cardBg = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.600')
   
-  const totalAssets = moodBoard.images.length + moodBoard.videos.length + moodBoard.links.length
-  const previewImage = moodBoard.images[0]
+  const totalAssets = (moodBoard.images?.length || 0) + (moodBoard.videos?.length || 0) + (moodBoard.links?.length || 0)
+  const previewImage = moodBoard.images?.[0]
 
   return (
     <Card bg={cardBg} borderWidth={1} borderColor={borderColor} _hover={{ shadow: 'md' }}>
@@ -61,14 +61,8 @@ export function MoodBoardCard({ moodBoard, onView, onEdit }: MoodBoardCardProps)
             </AspectRatio>
             
             {/* Phase Badge */}
-            {moodBoard.phaseId && (
-              <Badge
-                position="absolute"
-                top={2}
-                right={2}
-                colorScheme="brand"
-                size="sm"
-              >
+                        {(moodBoard as any).phase_id && (
+              <Badge colorScheme="purple" size="sm">
                 Phase Specific
               </Badge>
             )}
@@ -89,17 +83,17 @@ export function MoodBoardCard({ moodBoard, onView, onEdit }: MoodBoardCardProps)
             </VStack>
 
             {/* Color Palette Preview */}
-            {moodBoard.colorPalette && (
+            {(moodBoard as any).color_palette && (
               <VStack spacing={2} align="start">
                 <Text fontSize="xs" color="neutral.500" fontWeight="medium">
                   COLOR PALETTE
                 </Text>
                 <HStack spacing={1}>
                   {[
-                    ...moodBoard.colorPalette.primary.slice(0, 2),
-                    ...moodBoard.colorPalette.secondary.slice(0, 2),
-                    ...moodBoard.colorPalette.accent.slice(0, 2)
-                  ].slice(0, 6).map((color, index) => (
+                    ...((moodBoard as any).color_palette.primary?.slice(0, 2) || []),
+                    ...((moodBoard as any).color_palette.secondary?.slice(0, 2) || []),
+                    ...((moodBoard as any).color_palette.accent?.slice(0, 2) || [])
+                  ].slice(0, 6).map((color: string, index: number) => (
                     <Box
                       key={index}
                       w={6}
@@ -115,39 +109,38 @@ export function MoodBoardCard({ moodBoard, onView, onEdit }: MoodBoardCardProps)
             )}
 
             {/* Style Keywords */}
-            {moodBoard.styleKeywords.length > 0 && (
+            {/* Style Keywords */}
+            {(moodBoard as any).style_keywords && (moodBoard as any).style_keywords.length > 0 && (
               <VStack spacing={2} align="start">
                 <Text fontSize="xs" color="neutral.500" fontWeight="medium">
                   STYLE KEYWORDS
                 </Text>
                 <Wrap spacing={1}>
-                  {moodBoard.styleKeywords.slice(0, 4).map((keyword) => (
+                  {(moodBoard as any).style_keywords.slice(0, 4).map((keyword: string) => (
                     <WrapItem key={keyword}>
-                      <Tag size="sm" variant="subtle" colorScheme="brand">
+                      <Tag size="sm" variant="outline" colorScheme="brand">
                         {keyword}
                       </Tag>
                     </WrapItem>
                   ))}
-                  {moodBoard.styleKeywords.length > 4 && (
+                  {(moodBoard as any).style_keywords.length > 4 && (
                     <WrapItem>
-                      <Tag size="sm" variant="outline">
-                        +{moodBoard.styleKeywords.length - 4}
+                      <Tag size="sm" variant="outline" colorScheme="neutral">
+                        +{(moodBoard as any).style_keywords.length - 4}
                       </Tag>
                     </WrapItem>
                   )}
                 </Wrap>
               </VStack>
-            )}
-
-            {/* Stats */}
+            )}            {/* Stats */}
             <HStack spacing={4} fontSize="sm" color="neutral.600">
               <HStack spacing={1}>
                 <ImageIcon size={14} />
-                <Text>{moodBoard.images.length}</Text>
+                <Text>{moodBoard.images?.length || 0}</Text>
               </HStack>
               <HStack spacing={1}>
                 <LinkIcon size={14} />
-                <Text>{moodBoard.links.length}</Text>
+                <Text>{moodBoard.links?.length || 0}</Text>
               </HStack>
               <Text>•</Text>
               <Text>{totalAssets} total items</Text>
@@ -179,7 +172,7 @@ export function MoodBoardCard({ moodBoard, onView, onEdit }: MoodBoardCardProps)
 
             {/* Last Updated */}
             <Text fontSize="xs" color="neutral.500">
-              Updated {moodBoard.updatedAt.toLocaleDateString()}
+              Updated {typeof (moodBoard as any).updatedAt === 'string' ? new Date((moodBoard as any).updatedAt).toLocaleDateString() : (moodBoard as any).updatedAt.toLocaleDateString()}
             </Text>
           </VStack>
         </VStack>

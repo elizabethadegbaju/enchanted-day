@@ -26,89 +26,89 @@ export default function MoodBoardsPage() {
 
   
   // Mock data - will be replaced with real API calls
-  const moodBoards: MoodBoard[] = [
+  const moodBoards: any[] = [
     {
       id: '1',
       name: 'Overall Wedding Vision',
       description: 'Main inspiration and color palette for the entire wedding',
       images: [
         {
-          id: '1',
-          type: 'image',
+          id: 1,
+          type: 'IMAGE',
           url: '/api/placeholder/300/200',
-          s3Key: 'wedding-1/mood-1.jpg',
+          s3_key: 'wedding-1/mood-1.jpg',
           filename: 'inspiration-1.jpg',
           tags: ['romantic', 'elegant'],
-          uploadedAt: new Date(),
+          uploaded_at: '2024-01-15T00:00:00.000Z',
           metadata: { size: 1024000, format: 'jpg', dimensions: { width: 300, height: 200 } }
         }
       ],
       videos: [],
       links: [
         {
-          id: '1',
+          id: 1,
           url: 'https://pinterest.com/pin/123',
           title: 'Elegant Garden Wedding',
           description: 'Beautiful outdoor ceremony setup',
           source: 'Pinterest',
           tags: ['garden', 'outdoor'],
-          addedAt: new Date()
+          added_at: '2024-01-15T00:00:00.000Z'
         }
       ],
-      colorPalette: {
+      color_palette: {
         primary: ['#E8B4B8', '#F4D1D1'],
         secondary: ['#A8C8A8', '#D4E8D4'],
         accent: ['#F5E6D3', '#E8D5B7'],
         neutral: ['#F8F8F8', '#E5E5E5']
       },
-      styleKeywords: ['romantic', 'elegant', 'garden', 'vintage'],
+      style_keywords: ['romantic', 'elegant', 'garden', 'vintage'],
       createdAt: new Date('2024-01-15'),
       updatedAt: new Date('2024-01-20')
     },
     {
       id: '2',
-      phaseId: '1',
+      phase_id: '1',
       name: 'Legal Ceremony',
       description: 'Simple and intimate ceremony inspiration',
       images: [],
       videos: [],
       links: [],
-      colorPalette: {
+      color_palette: {
         primary: ['#FFFFFF', '#F5F5F5'],
         secondary: ['#E8B4B8'],
         accent: ['#F5E6D3'],
         neutral: ['#F8F8F8']
       },
-      styleKeywords: ['minimalist', 'intimate', 'classic'],
+      style_keywords: ['minimalist', 'intimate', 'classic'],
       createdAt: new Date('2024-01-18'),
       updatedAt: new Date('2024-01-18')
     },
     {
       id: '3',
-      phaseId: '2',
+      phase_id: '2',
       name: 'Church Wedding',
       description: 'Traditional church ceremony with elegant details',
       images: [
         {
-          id: '2',
-          type: 'image',
+          id: 2,
+          type: 'IMAGE',
           url: '/api/placeholder/300/200',
-          s3Key: 'wedding-1/church-1.jpg',
+          s3_key: 'wedding-1/church-1.jpg',
           filename: 'church-inspiration.jpg',
           tags: ['traditional', 'church'],
-          uploadedAt: new Date(),
+          uploaded_at: '2024-01-20T00:00:00.000Z',
           metadata: { size: 1024000, format: 'jpg', dimensions: { width: 300, height: 200 } }
         }
       ],
       videos: [],
       links: [],
-      colorPalette: {
+      color_palette: {
         primary: ['#E8B4B8', '#F4D1D1'],
         secondary: ['#FFFFFF', '#F5F5F5'],
         accent: ['#F5E6D3'],
         neutral: ['#F8F8F8']
       },
-      styleKeywords: ['traditional', 'elegant', 'church', 'formal'],
+      style_keywords: ['traditional', 'elegant', 'church', 'formal'],
       createdAt: new Date('2024-01-20'),
       updatedAt: new Date('2024-01-22')
     }
@@ -116,12 +116,12 @@ export default function MoodBoardsPage() {
 
   const cardBg = useColorModeValue('white', 'gray.800')
 
-  const handleViewMoodBoard = (moodBoard: MoodBoard) => {
+  const handleViewMoodBoard = (moodBoard: any) => {
     // Navigate to mood board detail page
     window.location.href = `/wedding/${weddingId}/mood-boards/${moodBoard.id}`
   }
 
-  const handleCreateMoodBoard = (moodBoardData: Partial<MoodBoard>) => {
+  const handleCreateMoodBoard = (moodBoardData: any) => {
     console.log('Creating mood board:', moodBoardData)
     // TODO: Implement API call to create mood board
     onClose()
@@ -203,7 +203,7 @@ export default function MoodBoardsPage() {
                   <Text fontSize="sm" color="neutral.600">Style Keywords</Text>
                 </HStack>
                 <Text fontSize="2xl" fontWeight="bold">
-                  {new Set(moodBoards.flatMap(board => board.styleKeywords)).size}
+                  {new Set(moodBoards.flatMap(board => board.style_keywords || [])).size}
                 </Text>
               </VStack>
             </CardBody>

@@ -45,7 +45,7 @@ import type { MediaAsset } from '@/types'
 interface MediaGalleryProps {
   images: MediaAsset[]
   videos: MediaAsset[]
-  onDelete: (mediaId: string) => void
+  onDelete: (mediaId: number) => void
   onUpload: () => void
 }
 
@@ -56,13 +56,13 @@ export function MediaGallery({ images, videos, onDelete, onUpload }: MediaGaller
   const toast = useToast()
 
   const allMedia = [...images, ...videos].sort((a, b) => 
-    new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+    new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
   )
 
   const filteredMedia = allMedia.filter(media => {
     if (filter === 'all') return true
-    if (filter === 'images') return media.type === 'image'
-    if (filter === 'videos') return media.type === 'video'
+    if (filter === 'images') return media.type === 'IMAGE'
+    if (filter === 'videos') return media.type === 'VIDEO'
     return true
   })
 
@@ -174,7 +174,7 @@ export function MediaGallery({ images, videos, onDelete, onUpload }: MediaGaller
                   {/* Media Preview */}
                   <Box position="relative" cursor="pointer" onClick={() => handleViewMedia(media)}>
                     <AspectRatio ratio={4/3}>
-                      {media.type === 'image' ? (
+                      {media.type === 'IMAGE' ? (
                         <Image
                           src={media.url}
                           alt={media.filename}
@@ -212,14 +212,14 @@ export function MediaGallery({ images, videos, onDelete, onUpload }: MediaGaller
                       position="absolute"
                       top={2}
                       left={2}
-                      colorScheme={media.type === 'image' ? 'green' : 'purple'}
+                      colorScheme={media.type === 'IMAGE' ? 'green' : 'purple'}
                       size="sm"
                     >
-                      {media.type === 'image' ? 'IMG' : 'VID'}
+                      {media.type === 'IMAGE' ? 'IMG' : 'VID'}
                     </Badge>
 
                     {/* Duration for videos */}
-                    {media.type === 'video' && media.metadata.duration && (
+                    {media.type === 'VIDEO' && (media.metadata as any)?.duration && (
                       <Badge
                         position="absolute"
                         bottom={2}
@@ -228,7 +228,7 @@ export function MediaGallery({ images, videos, onDelete, onUpload }: MediaGaller
                         color="white"
                         size="sm"
                       >
-                        {formatDuration(media.metadata.duration)}
+                        {formatDuration((media.metadata as any)?.duration || 0)}
                       </Badge>
                     )}
 
@@ -260,10 +260,10 @@ export function MediaGallery({ images, videos, onDelete, onUpload }: MediaGaller
                           {media.filename}
                         </Text>
                         <HStack spacing={2} fontSize="xs" color="neutral.500">
-                          <Text>{formatFileSize(media.metadata.size)}</Text>
-                          {media.metadata.dimensions && (
+                          <Text>{formatFileSize((media.metadata as any)?.size || 0)}</Text>
+                          {(media.metadata as any)?.dimensions && (
                             <Text>
-                              {media.metadata.dimensions.width}×{media.metadata.dimensions.height}
+                              {(media.metadata as any).dimensions.width}×{(media.metadata as any).dimensions.height}
                             </Text>
                           )}
                         </HStack>
@@ -307,19 +307,19 @@ export function MediaGallery({ images, videos, onDelete, onUpload }: MediaGaller
                     </HStack>
 
                     {/* Tags */}
-                    {media.tags.length > 0 && (
+                    {media.tags && media.tags.length > 0 && (
                       <Wrap spacing={1}>
-                        {media.tags.slice(0, 2).map((tag) => (
+                        {media.tags.slice(0, 2).map((tag) => tag ? (
                           <WrapItem key={tag}>
-                            <Tag size="sm" variant="subtle" colorScheme="brand">
+                            <Tag size="xs" colorScheme="brand">
                               {tag}
                             </Tag>
                           </WrapItem>
-                        ))}
-                        {media.tags.length > 2 && (
+                        ) : null)}
+                        {media.tags && media.tags.length > 2 && (
                           <WrapItem>
                             <Tag size="sm" variant="outline">
-                              +{media.tags.length - 2}
+                              +{(media.tags?.length || 0) - 2}
                             </Tag>
                           </WrapItem>
                         )}
@@ -327,7 +327,7 @@ export function MediaGallery({ images, videos, onDelete, onUpload }: MediaGaller
                     )}
 
                     <Text fontSize="xs" color="neutral.500">
-                      {media.uploadedAt.toLocaleDateString()}
+                      {new Date(media.uploaded_at).toLocaleDateString()}
                     </Text>
                   </VStack>
                 </VStack>
@@ -375,7 +375,7 @@ export function MediaGallery({ images, videos, onDelete, onUpload }: MediaGaller
           <ModalBody p={0} display="flex" alignItems="center" justifyContent="center">
             {selectedMedia && (
               <Box maxW="full" maxH="full">
-                {selectedMedia.type === 'image' ? (
+                {selectedMedia.type === 'IMAGE' ? (
                   <Image
                     src={selectedMedia.url}
                     alt={selectedMedia.filename}

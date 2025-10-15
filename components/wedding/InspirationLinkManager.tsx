@@ -89,15 +89,14 @@ export function InspirationLinkManager({ links, onChange }: InspirationLinkManag
       ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
       : []
 
-    const newLink: InspirationLink = {
-      id: editingLink?.id || Math.random().toString(36).substr(2, 9),
+    const newLink: any = {
+      id: editingLink?.id || Math.floor(Math.random() * 1000000),
       url: data.url,
       title: data.title,
       description: data.description || '',
       source: detectSource(data.url),
       tags,
-      thumbnail: generateThumbnail(),
-      addedAt: editingLink?.addedAt || new Date()
+      added_at: editingLink?.added_at || new Date().toISOString()
     }
 
     if (editingLink) {
@@ -144,11 +143,11 @@ export function InspirationLinkManager({ links, onChange }: InspirationLinkManag
     setValue('url', link.url)
     setValue('title', link.title)
     setValue('description', link.description || '')
-    setValue('tags', link.tags.join(', '))
+    setValue('tags', link.tags ? link.tags.join(', ') : '')
     onOpen()
   }
 
-  const handleDeleteLink = (linkId: string) => {
+  const handleDeleteLink = (linkId: number) => {
     const updatedLinks = links.filter(link => link.id !== linkId)
     onChange(updatedLinks)
     toast({
@@ -210,7 +209,7 @@ export function InspirationLinkManager({ links, onChange }: InspirationLinkManag
                   {/* Thumbnail */}
                   <Box position="relative">
                     <Image
-                      src={link.thumbnail || '/api/placeholder/300/200'}
+                      src={'/api/placeholder/300/200'}
                       alt={link.title}
                       w="full"
                       h="150px"
@@ -255,19 +254,19 @@ export function InspirationLinkManager({ links, onChange }: InspirationLinkManag
                     </VStack>
 
                     {/* Tags */}
-                    {link.tags.length > 0 && (
+                    {link.tags && link.tags.length > 0 && (
                       <Wrap spacing={1}>
-                        {link.tags.slice(0, 3).map((tag: string) => (
+                        {link.tags.slice(0, 3).map((tag: string | null) => tag ? (
                           <WrapItem key={tag}>
                             <Tag size="sm" variant="subtle" colorScheme="brand">
                               {tag}
                             </Tag>
                           </WrapItem>
-                        ))}
-                        {link.tags.length > 3 && (
+                        ) : null)}
+                        {link.tags && link.tags.length > 3 && (
                           <WrapItem>
                             <Tag size="sm" variant="outline">
-                              +{link.tags.length - 3}
+                              +{(link.tags?.length || 0) - 3}
                             </Tag>
                           </WrapItem>
                         )}
@@ -310,7 +309,7 @@ export function InspirationLinkManager({ links, onChange }: InspirationLinkManag
 
                     {/* Added Date */}
                     <Text fontSize="xs" color="neutral.500">
-                      Added {link.addedAt.toLocaleDateString()}
+                      Added {new Date(link.added_at).toLocaleDateString()}
                     </Text>
                   </VStack>
                 </VStack>
