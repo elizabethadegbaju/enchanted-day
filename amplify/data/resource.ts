@@ -42,7 +42,7 @@ const schema = a.schema({
     name: a.string().required(),
     description: a.string().required(),
     price: a.float().required(),
-    currency: a.string().default("USD"),
+    currency: a.string().required(),
   }),
 
   PaymentSchedule: a.customType({
@@ -132,6 +132,18 @@ const schema = a.schema({
       cultural_traditions: a.string().array().required(),
       days_until_wedding: a.integer().required(),
       overall_progress: a.integer().required(),
+      budget_categories: a.hasMany("BudgetCategory", "wedding_id"),
+      transactions: a.hasMany("Transaction", "wedding_id"),
+      budget_phases: a.hasMany("BudgetPhase", "wedding_id"),
+      overall_budgets: a.hasMany("OverallBudget", "wedding_id"),
+      guests: a.hasMany("Guest", "wedding_id"),
+      mood_boards: a.hasMany("MoodBoard", "wedding_id"),
+      milestones: a.hasMany("Milestone", "wedding_id"),
+      project_deadlines: a.hasMany("ProjectDeadline", "wedding_id"),
+      contingency_plans: a.hasMany("ContingencyPlan", "wedding_id"),
+      vendors: a.hasMany("Vendor", "wedding_id"),
+      activities: a.hasMany("Activity", "wedding_id"),
+      tasks: a.hasMany("Task", "wedding_id"),
     })
     .authorization((allow: any) => [allow.publicApiKey()]),
 
@@ -147,6 +159,7 @@ const schema = a.schema({
       status: a.ref("BudgetStatus").required(),
       vendors: a.string().array(),
       phase_id: a.string(),
+      transactions: a.hasMany("Transaction", "category_id"),
     })
     .authorization((allow: any) => [allow.publicApiKey()]),
 
@@ -184,9 +197,7 @@ const schema = a.schema({
       allocated: a.float().required(),
       spent: a.float().required(),
       remaining: a.float().required(),
-      currency: a.string().default("USD"),
-      categories: a.ref("BudgetCategory").array(),
-      phases: a.ref("BudgetPhase").array(),
+      currency: a.string().required(),
       updated_at: a.datetime().required(),
     })
     .authorization((allow: any) => [allow.publicApiKey()]),
@@ -199,6 +210,7 @@ const schema = a.schema({
       dietary_restrictions: a.string().array(),
       accommodation_needs: a.string().array(),
       phase_attendance: a.ref("PhaseAttendance").array(),
+      guests: a.hasMany("Guest", "plus_one_id"),
     })
     .authorization((allow: any) => [allow.publicApiKey()]),
 
@@ -221,6 +233,7 @@ const schema = a.schema({
       invite_group: a.string(),
       rsvp_date: a.datetime(),
       notes: a.string(),
+      communications: a.hasMany("Communication", "guest_id"),
     })
     .authorization((allow: any) => [allow.publicApiKey()]),
 
@@ -306,6 +319,7 @@ const schema = a.schema({
       budget: a.ref("Budget").required(),
       phases: a.string().array(),
       last_contact: a.datetime(),
+      communications: a.hasMany("VendorCommunication", "vendor_id"),
     })
     .authorization((allow: any) => [allow.publicApiKey()]),
 
