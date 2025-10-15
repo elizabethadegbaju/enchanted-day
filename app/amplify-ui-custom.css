@@ -1,0 +1,208 @@
+/* Custom Amplify UI color override - balanced pink theme */
+
+/* Override Amplify brand colors */
+[data-amplify-authenticator] {
+  --amplify-colors-brand-primary-90: #ec4899;
+  --amplify-colors-brand-primary-100: #db2777;
+  --amplify-colors-teal-80: #ec4899;
+  --amplify-colors-teal-90: #ec4899;
+  --amplify-colors-teal-100: #db2777;
+}
+
+/* Ensure primary buttons are definitely pink */
+[data-amplify-authenticator] button[data-variation="primary"],
+[data-amplify-authenticator] .amplify-button--primary,
+[data-amplify-authenticator] .amplify-button[data-variation="primary"],
+[data-amplify-authenticator] input[type="submit"],
+[data-amplify-authenticator] button[type="submit"] {
+  background-color: #ec4899 !important;
+  border-color: #ec4899 !important;
+  color: white !important;
+}
+
+[data-amplify-authenticator] button[data-variation="primary"]:hover,
+[data-amplify-authenticator] .amplify-button--primary:hover,
+[data-amplify-authenticator] .amplify-button[data-variation="primary"]:hover,
+[data-amplify-authenticator] input[type="submit"]:hover,
+[data-amplify-authenticator] button[type="submit"]:hover {
+  background-color: #db2777 !important;
+  border-color: #db2777 !important;
+}
+
+[data-amplify-authenticator] button[data-variation="primary"]:focus,
+[data-amplify-authenticator] .amplify-button--primary:focus,
+[data-amplify-authenticator] .amplify-button[data-variation="primary"]:focus {
+  background-color: #db2777 !important;
+  border-color: #db2777 !important;
+  box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.2) !important;
+}
+
+/* Active tab should be pink */
+[data-amplify-authenticator] [role="tab"][aria-selected="true"],
+[data-amplify-authenticator] [data-amplify-authenticator-tab][data-active] {
+  color: #ec4899 !important;
+  border-bottom-color: #ec4899 !important;
+}
+
+/* Input focus should be pink */
+[data-amplify-authenticator] input:focus,
+[data-amplify-authenticator] select:focus {
+  border-color: #ec4899 !important;
+  box-shadow: 0 0 0 1px rgba(236, 72, 153, 0.2) !important;
+}
+
+/* Links should be pink */
+[data-amplify-authenticator] button[data-variation="link"],
+[data-amplify-authenticator] a {
+  color: #ec4899 !important;
+}
+
+[data-amplify-authenticator] button[data-variation="link"]:hover,
+[data-amplify-authenticator] a:hover {
+  color: #db2777 !important;
+}
+
+/* Override any teal/green that might still show up */
+.amplify-button--primary,
+button[data-amplify-button][data-variation="primary"] {
+  background-color: #ec4899 !important;
+  border-color: #ec4899 !important;
+}
+
+/* Custom Authenticator container styling */
+[data-amplify-authenticator] [data-amplify-router] {
+  background: var(--amplify-colors-background-primary);
+  border-radius: var(--amplify-radii-large);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+  max-width: 400px;
+  margin: 2rem auto;
+}
+
+/* Button styling */
+[data-amplify-authenticator] button[data-variation="primary"] {
+  background-color: #ec4899 !important;
+  border-color: #ec4899 !important;
+  border-radius: var(--amplify-radii-medium);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+[data-amplify-authenticator] button[data-variation="primary"]:hover {
+  background-color: #db2777 !important;
+  border-color: #db2777 !important;
+}
+
+[data-amplify-authenticator] button[data-variation="primary"]:focus {
+  background-color: #db2777 !important;
+  border-color: #db2777 !important;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1) !important;
+}
+
+/* Link styling */
+[data-amplify-authenticator] button[data-variation="link"] {
+  color: #ec4899 !important;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+[data-amplify-authenticator] button[data-variation="link"]:hover {
+  color: #db2777 !important;
+  text-decoration: underline;
+}
+
+/* Input styling */
+[data-amplify-authenticator] input[type="text"],
+[data-amplify-authenticator] input[type="email"],
+[data-amplify-authenticator] input[type="password"],
+[data-amplify-authenticator] input[type="tel"] {
+  border-radius: var(--amplify-radii-medium);
+  border-color: #e7e5e4;
+  background-color: #f5f5f4;
+  padding: 0.75rem;
+  font-family: var(--amplify-fonts-default);
+  transition: all 0.2s ease-in-out;
+}
+
+[data-amplify-authenticator] input[type="text"]:focus,
+[data-amplify-authenticator] input[type="email"]:focus,
+[data-amplify-authenticator] input[type="password"]:focus,
+[data-amplify-authenticator] input[type="tel"]:focus {
+  border-color: #ec4899 !important;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1) !important;
+  outline: none;
+}
+
+/* Label styling */
+[data-amplify-authenticator] label {
+  font-weight: 600;
+  color: #44403c;
+  margin-bottom: 0.5rem;
+  font-family: var(--amplify-fonts-default);
+}
+
+/* Error message styling */
+[data-amplify-authenticator] [data-amplify-field-error] {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-family: var(--amplify-fonts-default);
+}
+
+/* Header styling */
+[data-amplify-authenticator] [data-amplify-router-header] h1 {
+  color: #1c1917;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-family: var(--amplify-fonts-default);
+}
+
+/* Form spacing */
+[data-amplify-authenticator] form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Tab styling */
+[data-amplify-authenticator] [data-amplify-authenticator-tab] {
+  color: #78716c;
+  border-bottom: 2px solid transparent;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-family: var(--amplify-fonts-default);
+}
+
+[data-amplify-authenticator] [data-amplify-authenticator-tab][data-active] {
+  color: #ec4899 !important;
+  border-bottom-color: #ec4899 !important;
+}
+
+/* Loading spinner */
+[data-amplify-authenticator] [data-amplify-loader] {
+  border-color: #ec4899 !important;
+}
+
+/* Success/Info messages */
+[data-amplify-authenticator] [data-amplify-alert][data-variation="info"] {
+  background-color: #f0f9ff;
+  border-color: #0ea5e9;
+  color: #0c4a6e;
+  border-radius: var(--amplify-radii-medium);
+  padding: 1rem;
+  font-family: var(--amplify-fonts-default);
+}
+
+/* Error alerts */
+[data-amplify-authenticator] [data-amplify-alert][data-variation="error"] {
+  background-color: #fef2f2;
+  border-color: #dc2626;
+  color: #991b1b;
+  border-radius: var(--amplify-radii-medium);
+  padding: 1rem;
+  font-family: var(--amplify-fonts-default);
+}
