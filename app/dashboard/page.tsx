@@ -128,7 +128,7 @@ export default function DashboardPage() {
       setDashboardData({
         wedding: {
           id: wedding.id,
-          coupleNames: wedding.couple_names?.filter(name => name !== null) as string[] || ['John', 'Jane'],
+          coupleNames: wedding.couple_names?.filter((name: any) => name !== null) as string[] || ['John', 'Jane'],
           weddingDate: primaryDate.toISOString().split('T')[0] || '2024-06-15',
           status: wedding.status || 'planning'
         },

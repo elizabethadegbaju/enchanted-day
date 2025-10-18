@@ -309,7 +309,7 @@ export function MediaGallery({ images, videos, onDelete, onUpload }: MediaGaller
                     {/* Tags */}
                     {media.tags && media.tags.length > 0 && (
                       <Wrap spacing={1}>
-                        {media.tags.slice(0, 2).map((tag) => tag ? (
+                        {media.tags.slice(0, 2).map((tag: any) => tag ? (
                           <WrapItem key={tag}>
                             <Tag size="xs" colorScheme="brand">
                               {tag}

@@ -1,5 +1,5 @@
 import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '@/amplify/data/resource';
+import type { Schema } from '@/amplify/data/enhanced-resource';
 import type { Wedding, Guest, Vendor, OverallBudget, BudgetCategory, WeddingForComponents } from '@/types';
 
 // Generate the Amplify Data client
@@ -39,7 +39,7 @@ export class AmplifyDataClient {
   }
 
   async createWedding(weddingData: {
-    user_id: number;
+    user_id: string;
     couple_names: string[];
     wedding_type: 'SINGLE_EVENT' | 'MULTI_PHASE';
     status: 'PLANNING' | 'CONFIRMED' | 'COMPLETED';
@@ -129,18 +129,15 @@ export class AmplifyDataClient {
     }
   }
 
+  // Note: OverallBudget is a custom type, not a model in the enhanced schema
+  // Budget information is stored as part of the Wedding model
   async getOverallBudget(weddingId: string) {
     try {
-      const { data: budgets, errors } = await client.models.OverallBudget.list({
-        filter: { wedding_id: { eq: weddingId } }
-      });
-      if (errors) {
-        console.error('Errors fetching overall budget:', errors);
-        throw new Error('Failed to fetch overall budget');
-      }
-      return budgets?.[0] || null;
+      // Get budget data from the wedding model instead
+      const wedding = await this.getWedding(weddingId);
+      return wedding?.overall_budget || null;
     } catch (error) {
-      console.error('Failed to fetch overall budget:', error);
+      console.error('Failed to fetch budget:', error);
       throw error;
     }
   }

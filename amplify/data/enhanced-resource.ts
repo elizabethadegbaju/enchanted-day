@@ -34,19 +34,14 @@ const schema = a.schema({
     notes: a.string(),
   }),
 
-  // Budget breakdown per phase
-  PhaseBudget: a.customType({
+  // Budget information that matches UI expectations
+  BudgetInfo: a.customType({
     total: a.float().required(),
     allocated: a.float().required(),
     spent: a.float().required(),
     remaining: a.float().required(),
     currency: a.string().required(),
-    categories: a.customType({
-      name: a.string().required(),
-      allocated: a.float().required(),
-      spent: a.float().required(),
-      percentage: a.float(),
-    }).array(),
+    categories: a.string().array(), // Simple array for now
   }),
 
   // Phase-specific requirements
@@ -62,15 +57,18 @@ const schema = a.schema({
     additional_notes: a.string(),
   }),
 
-  // Timeline for each phase
-  PhaseTimeline: a.customType({
+    // Schedule item structure
+  ScheduleItem: a.customType({
+    time: a.string().required(),
+    activity: a.string().required(),
+    duration_minutes: a.integer(),
+  }),
+
+  // Timeline information
+  TimelineInfo: a.customType({
     start_time: a.string().required(), // "10:00 AM"
     end_time: a.string().required(),   // "2:00 PM"
-    schedule: a.customType({
-      time: a.string().required(),
-      activity: a.string().required(),
-      duration_minutes: a.integer(),
-    }).array(),
+    schedule: a.ref("ScheduleItem").array(),
     setup_time: a.string(),
     breakdown_time: a.string(),
   }),
@@ -136,6 +134,25 @@ const schema = a.schema({
     inspiration_sources: a.string().array(),
   }),
 
+  // Budget category for overall budget
+  OverallBudgetCategory: a.customType({
+    name: a.string().required(),
+    allocated: a.float().required(),
+    spent: a.float().required(),
+    percentage_of_total: a.float(),
+    vendors: a.string().array(),
+    phases: a.string().array(),
+  }),
+
+  // Payment schedule item for overall budget
+  PaymentScheduleItem: a.customType({
+    vendor_name: a.string().required(),
+    amount: a.float().required(),
+    due_date: a.date().required(),
+    status: a.string().required(), // PENDING, PAID, OVERDUE
+    phase_id: a.string(),
+  }),
+
   // Overall Budget tracking
   OverallBudget: a.customType({
     total: a.float().required(),
@@ -144,21 +161,8 @@ const schema = a.schema({
     remaining: a.float().required(),
     currency: a.string().required(),
     contingency_percentage: a.float(), // Usually 10-15%
-    categories: a.customType({
-      name: a.string().required(),
-      allocated: a.float().required(),
-      spent: a.float().required(),
-      percentage_of_total: a.float(),
-      vendors: a.string().array(),
-      phases: a.string().array(),
-    }).array(),
-    payment_schedule: a.customType({
-      vendor_name: a.string().required(),
-      amount: a.float().required(),
-      due_date: a.date().required(),
-      status: a.string().required(), // PENDING, PAID, OVERDUE
-      phase_id: a.string(),
-    }).array(),
+    categories: a.ref("OverallBudgetCategory").array(),
+    payment_schedule: a.ref("PaymentScheduleItem").array(),
   }),
 
   // Vendor Category
@@ -212,6 +216,22 @@ const schema = a.schema({
     meal_preference: a.string(),
     accessibility_needs: a.string().array(),
     plus_one_attending: a.boolean(),
+  }),
+
+  // Subtask structure
+  SubTask: a.customType({
+    id: a.string().required(),
+    title: a.string().required(),
+    completed: a.boolean().required(),
+  }),
+
+  // Vendor service structure
+  VendorService: a.customType({
+    id: a.string().required(),
+    name: a.string().required(),
+    description: a.string(),
+    price: a.float().required(),
+    currency: a.string().required(),
   }),
 
   // Main Wedding Model
@@ -395,13 +415,7 @@ const schema = a.schema({
       status: a.ref("VendorStatus").required(),
       
       // Services and pricing
-      services: a.customType({
-        id: a.string().required(),
-        name: a.string().required(),
-        description: a.string(),
-        price: a.float().required(),
-        currency: a.string().required(),
-      }).array(),
+      services: a.ref("VendorService").array(),
       
       // Contract and payment
       contract_signed: a.boolean(),
@@ -484,11 +498,7 @@ const schema = a.schema({
       actual_hours: a.float(),
       
       dependencies: a.string().array(), // Other task IDs
-      subtasks: a.customType({
-        id: a.string().required(),
-        title: a.string().required(),
-        completed: a.boolean().required(),
-      }).array(),
+      subtasks: a.ref("SubTask").array(),
       
       attachments: a.string().array(),
       notes: a.string(),
