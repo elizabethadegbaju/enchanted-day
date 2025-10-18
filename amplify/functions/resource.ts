@@ -1,8 +1,9 @@
 import { defineFunction } from "@aws-amplify/backend";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import { Duration } from "aws-cdk-lib";
+import { Construct } from "constructs";
 
-export const orchestratorFunction = defineFunction((scope) => {
+export const orchestratorFunction = defineFunction((scope: Construct) => {
   // Create shared layer
   const sharedLayer = new lambda.LayerVersion(scope, "SharedDependenciesLayer", {
     code: lambda.Code.fromAsset("./amplify/functions/src", {
