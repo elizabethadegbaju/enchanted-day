@@ -1,32 +1,16 @@
 import { defineFunction } from "@aws-amplify/backend";
-import * as lambda from "aws-cdk-lib/aws-lambda";
 import { Duration } from "aws-cdk-lib";
-import { Construct } from "constructs";
+import * as lambda from "aws-cdk-lib/aws-lambda";
 
-export const orchestratorFunction = defineFunction((scope: Construct) => {
-  // Create shared layer
-  const sharedLayer = new lambda.LayerVersion(scope, "SharedDependenciesLayer", {
-    code: lambda.Code.fromAsset("./amplify/functions/src", {
-      bundling: {
-        image: lambda.Runtime.PYTHON_3_11.bundlingImage,
-        command: [
-          "bash",
-          "-c",
-          "pip install -r requirements.txt -t /asset-output/python --no-cache-dir",
-        ],
-      },
-    }),
-    compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
-    description: "Shared Python dependencies for all Lambda functions",
-  });
-
-  // Create the function with the layer
+export const orchestratorFunction = defineFunction((scope) => {
   return new lambda.Function(scope, "OrchestratorFunction", {
     runtime: lambda.Runtime.PYTHON_3_11,
     handler: "orchestrator.handler",
     code: lambda.Code.fromAsset("./amplify/functions/src"),
     timeout: Duration.seconds(60),
     memorySize: 1024,
-    layers: [sharedLayer],
+    environment: {
+      // Add environment variables here as needed
+    },
   });
 });
