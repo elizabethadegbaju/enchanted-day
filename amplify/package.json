@@ -2,6 +2,7 @@
   "type": "module",
   "dependencies": {
     "@aws-amplify/backend": "^1.5.1",
+    "@aws-sdk/client-bedrock-agentcore": "^3.0.0",
     "aws-cdk": "^2",
     "aws-cdk-lib": "^2",
     "constructs": "^10.3.0"
