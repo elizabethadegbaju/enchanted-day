@@ -1,608 +1,485 @@
 'use client'
 
+import React, { useState, useEffect } from 'react'
 import {
   Box,
-  Grid,
-  Card,
-  CardBody,
-  CardHeader,
   VStack,
   HStack,
   Text,
-  Button,
-  Badge,
+  Card,
+  CardBody,
+  CardHeader,
   Progress,
-  Divider,
-  Tabs,
-  TabList,
-  Tab,
-  Flex,
-  IconButton,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
+  Badge,
+  Button,
+  SimpleGrid,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
   Table,
   Thead,
   Tbody,
   Tr,
   Th,
   Td,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  StatArrow,
+  useColorModeValue,
+  Spinner,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  Divider,
+  Flex
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { 
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
   Plus,
-  MoreVertical,
-  Edit,
-  Trash2,
-  AlertTriangle,
-  Receipt
+  Download,
+  AlertTriangle
 } from 'lucide-react'
-import { useState } from 'react'
-
-// Mock data - will be replaced with real API calls
-const mockBudgetData = {
-  overall: {
-    total: 50000,
-    allocated: 45000,
-    spent: 28500,
-    remaining: 21500,
-    currency: 'USD'
-  },
-  categories: [
-    {
-      id: '1',
-      name: 'Venue',
-      allocated: 15000,
-      spent: 15000,
-      remaining: 0,
-      percentage: 30,
-      status: 'on-budget' as const,
-      vendors: ['Grand Ballroom']
-    },
-    {
-      id: '2',
-      name: 'Catering',
-      allocated: 12000,
-      spent: 6000,
-      remaining: 6000,
-      percentage: 24,
-      status: 'on-budget' as const,
-      vendors: ['Gourmet Catering Co.']
-    },
-    {
-      id: '3',
-      name: 'Photography',
-      allocated: 4000,
-      spent: 1000,
-      remaining: 3000,
-      percentage: 8,
-      status: 'under-budget' as const,
-      vendors: ['Elegant Photography Studio']
-    },
-    {
-      id: '4',
-      name: 'Florals',
-      allocated: 3000,
-      spent: 3500,
-      remaining: -500,
-      percentage: 6,
-      status: 'over-budget' as const,
-      vendors: ['Blooming Gardens Florist']
-    },
-    {
-      id: '5',
-      name: 'Entertainment',
-      allocated: 4000,
-      spent: 0,
-      remaining: 4000,
-      percentage: 8,
-      status: 'not-started' as const,
-      vendors: ['Harmony Wedding Band']
-    },
-    {
-      id: '6',
-      name: 'Attire',
-      allocated: 2500,
-      spent: 1800,
-      remaining: 700,
-      percentage: 5,
-      status: 'on-budget' as const,
-      vendors: ['Bridal Boutique', 'Men\'s Wearhouse']
-    },
-    {
-      id: '7',
-      name: 'Transportation',
-      allocated: 1500,
-      spent: 0,
-      remaining: 1500,
-      percentage: 3,
-      status: 'not-started' as const,
-      vendors: []
-    },
-    {
-      id: '8',
-      name: 'Miscellaneous',
-      allocated: 3000,
-      spent: 1200,
-      remaining: 1800,
-      percentage: 6,
-      status: 'on-budget' as const,
-      vendors: []
-    }
-  ],
-  recentTransactions: [
-    {
-      id: '1',
-      date: new Date('2024-01-20'),
-      description: 'Venue deposit payment',
-      category: 'Venue',
-      amount: 5000,
-      type: 'expense' as const,
-      vendor: 'Grand Ballroom'
-    },
-    {
-      id: '2',
-      date: new Date('2024-01-18'),
-      description: 'Photography booking deposit',
-      category: 'Photography',
-      amount: 1000,
-      type: 'expense' as const,
-      vendor: 'Elegant Photography Studio'
-    },
-    {
-      id: '3',
-      date: new Date('2024-01-15'),
-      description: 'Wedding dress purchase',
-      category: 'Attire',
-      amount: 1200,
-      type: 'expense' as const,
-      vendor: 'Bridal Boutique'
-    },
-    {
-      id: '4',
-      date: new Date('2024-01-10'),
-      description: 'Floral arrangement deposit',
-      category: 'Florals',
-      amount: 800,
-      type: 'expense' as const,
-      vendor: 'Blooming Gardens Florist'
-    }
-  ],
-  phases: [
-    {
-      id: 'ceremony',
-      name: 'Ceremony',
-      allocated: 20000,
-      spent: 12000,
-      remaining: 8000
-    },
-    {
-      id: 'reception',
-      name: 'Reception',
-      allocated: 25000,
-      spent: 16500,
-      remaining: 8500
-    }
-  ]
-}
-
-const statusColors: Record<string, string> = {
-  'on-budget': 'green',
-  'under-budget': 'blue',
-  'over-budget': 'red',
-  'not-started': 'gray'
-}
-
-const statusLabels: Record<string, string> = {
-  'on-budget': 'On Budget',
-  'under-budget': 'Under Budget',
-  'over-budget': 'Over Budget',
-  'not-started': 'Not Started'
-}
+import { getBudgetData, type BudgetData } from '@/lib/wedding-data-service'
+import { calculateBudgetUsage, formatDateForDisplay } from '@/lib/data-utils'
 
 export default function BudgetPage() {
-  const [selectedView, setSelectedView] = useState<'overview' | 'categories' | 'phases'>('overview')
-  const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure()
-  const [addType, setAddType] = useState<'expense' | 'category'>('expense')
+  const [budgetData, setBudgetData] = useState<BudgetData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
+  const cardBg = useColorModeValue('white', 'gray.700')
+  const borderColor = useColorModeValue('gray.200', 'gray.600')
 
-  
-  const overallPercentage = (mockBudgetData.overall.spent / mockBudgetData.overall.allocated) * 100
-  const remainingPercentage = ((mockBudgetData.overall.allocated - mockBudgetData.overall.spent) / mockBudgetData.overall.allocated) * 100
+  useEffect(() => {
+    loadBudgetData()
+  }, [])
+
+  const loadBudgetData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // getCurrentUser() is called inside getBudgetData()
+      const data = await getBudgetData()
+      setBudgetData(data)
+    } catch (err) {
+      console.error('Error loading budget data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load budget data')
+      
+      // Fallback to mock data for development
+      setBudgetData({
+        overallBudget: {
+          total: 50000,
+          allocated: 48000,
+          spent: 32500,
+          remaining: 17500,
+          currency: 'USD',
+          categories: [
+            { name: 'Venue', allocated: 15000, spent: 12000, percentage: 30 },
+            { name: 'Catering', allocated: 12000, spent: 8500, percentage: 25 },
+            { name: 'Photography', allocated: 5000, spent: 3500, percentage: 10 },
+            { name: 'Florals', allocated: 4000, spent: 2800, percentage: 8 },
+            { name: 'Music/DJ', allocated: 3000, spent: 1500, percentage: 6 }
+          ]
+        },
+        categories: [
+          {
+            id: '1',
+            name: 'Venue',
+            allocated: 15000,
+            spent: 12000,
+            remaining: 3000,
+            percentage: 80,
+            status: 'ON_TRACK',
+            vendorIds: ['venue-1'],
+            phaseIds: ['ceremony', 'reception']
+          },
+          {
+            id: '2',
+            name: 'Catering',
+            allocated: 12000,
+            spent: 8500,
+            remaining: 3500,
+            percentage: 71,
+            status: 'ON_TRACK',
+            vendorIds: ['caterer-1'],
+            phaseIds: ['reception']
+          },
+          {
+            id: '3',
+            name: 'Photography',
+            allocated: 5000,
+            spent: 3500,
+            remaining: 1500,
+            percentage: 70,
+            status: 'ON_TRACK',
+            vendorIds: ['photographer-1'],
+            phaseIds: ['ceremony', 'reception']
+          },
+          {
+            id: '4',
+            name: 'Florals',
+            allocated: 4000,
+            spent: 2800,
+            remaining: 1200,
+            percentage: 70,
+            status: 'ON_TRACK',
+            vendorIds: ['florist-1'],
+            phaseIds: ['ceremony', 'reception']
+          },
+          {
+            id: '5',
+            name: 'Music/DJ',
+            allocated: 3000,
+            spent: 1500,
+            remaining: 1500,
+            percentage: 50,
+            status: 'UNDER_BUDGET',
+            vendorIds: ['dj-1'],
+            phaseIds: ['reception']
+          },
+          {
+            id: '6',
+            name: 'Transportation',
+            allocated: 2000,
+            spent: 2200,
+            remaining: -200,
+            percentage: 110,
+            status: 'OVER_BUDGET',
+            vendorIds: ['transport-1'],
+            phaseIds: ['ceremony', 'reception']
+          }
+        ],
+        transactions: [
+          {
+            id: '1',
+            date: '2024-01-28',
+            description: 'Venue deposit payment',
+            amount: -5000,
+            type: 'PAYMENT',
+            categoryId: '1',
+            vendorName: 'Grand Ballroom',
+            phaseId: 'reception'
+          },
+          {
+            id: '2',
+            date: '2024-01-25',
+            description: 'Photography contract signing',
+            amount: -1500,
+            type: 'PAYMENT',
+            categoryId: '3',
+            vendorName: 'Elegant Photography'
+          },
+          {
+            id: '3',
+            date: '2024-01-20',
+            description: 'Catering deposit',
+            amount: -3000,
+            type: 'PAYMENT',
+            categoryId: '2',
+            vendorName: 'Gourmet Catering Co.'
+          },
+          {
+            id: '4',
+            date: '2024-01-15',
+            description: 'Floral arrangement deposit',
+            amount: -800,
+            type: 'PAYMENT',
+            categoryId: '4',
+            vendorName: 'Blooming Gardens'
+          },
+          {
+            id: '5',
+            date: '2024-01-12',
+            description: 'Transportation booking',
+            amount: -1200,
+            type: 'PAYMENT',
+            categoryId: '6',
+            vendorName: 'Luxury Limos'
+          }
+        ]
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    const currency = budgetData?.overallBudget.currency || 'USD'
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency
+    }).format(Math.abs(amount))
+  }
+
+  const getCategoryStatusColor = (status: string) => {
+    switch (status) {
+      case 'ON_TRACK': return 'green'
+      case 'UNDER_BUDGET': return 'blue'
+      case 'OVER_BUDGET': return 'red'
+      case 'AT_RISK': return 'orange'
+      default: return 'gray'
+    }
+  }
+
+  const getCategoryStatusIcon = (status: string) => {
+    switch (status) {
+      case 'UNDER_BUDGET': return <TrendingDown size={16} />
+      case 'OVER_BUDGET': return <TrendingUp size={16} />
+      case 'AT_RISK': return <AlertTriangle size={16} />
+      default: return null
+    }
+  }
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <VStack spacing={4} py={8}>
+          <Spinner size="xl" color="purple.500" />
+          <Text>Loading budget data...</Text>
+        </VStack>
+      </DashboardLayout>
+    )
+  }
+
+  if (error && !budgetData) {
+    return (
+      <DashboardLayout>
+        <Alert status="error" borderRadius="md">
+          <AlertIcon />
+          <AlertTitle>Unable to load budget!</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </DashboardLayout>
+    )
+  }
+
+  if (!budgetData) {
+    return (
+      <DashboardLayout>
+        <Card bg={cardBg} borderColor={borderColor}>
+          <CardBody>
+            <VStack spacing={4} py={8}>
+              <DollarSign size={48} color="gray" />
+              <Text fontSize="lg" color="gray.500">No budget data available</Text>
+              <Button leftIcon={<Plus size={16} />} colorScheme="purple">
+                Set Up Your Budget
+              </Button>
+            </VStack>
+          </CardBody>
+        </Card>
+      </DashboardLayout>
+    )
+  }
+
+  const budgetUsage = calculateBudgetUsage(budgetData.overallBudget)
 
   return (
-    <DashboardLayout 
-      title="Budget Management"
-      breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Budget' }
-      ]}
-    >
+    <DashboardLayout>
       <VStack spacing={6} align="stretch">
-        {/* Header Actions */}
-        <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
-          <HStack spacing={4}>
-            <Tabs size="sm" onChange={(index) => {
-              const views = ['overview', 'categories', 'phases'] as const
-              setSelectedView(views[index])
-            }}>
-              <TabList>
-                <Tab>Overview</Tab>
-                <Tab>Categories</Tab>
-                <Tab>Phases</Tab>
-              </TabList>
-            </Tabs>
-          </HStack>
-          
+        {/* Header */}
+        <Flex justify="space-between" align="center">
+          <Text fontSize="2xl" fontWeight="bold">Wedding Budget</Text>
           <HStack spacing={2}>
-            <Button leftIcon={<Receipt size={16} />} variant="outline">
-              Export Report
+            <Button leftIcon={<Download size={16} />} variant="outline">
+              Export
             </Button>
-            <Button leftIcon={<Plus size={16} />} colorScheme="brand" onClick={onAddOpen}>
+            <Button leftIcon={<Plus size={16} />} colorScheme="purple">
               Add Expense
             </Button>
           </HStack>
         </Flex>
 
-        {/* Budget Overview Cards */}
-        <Grid templateColumns={{ base: '1fr', md: 'repeat(4, 1fr)' }} gap={6}>
-          <Card>
+        {/* Budget Overview */}
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
+          <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>
               <Stat>
                 <StatLabel>Total Budget</StatLabel>
-                <StatNumber>${mockBudgetData.overall.total.toLocaleString()}</StatNumber>
-                <StatHelpText>Allocated: ${mockBudgetData.overall.allocated.toLocaleString()}</StatHelpText>
+                <StatNumber color="purple.500">
+                  {formatCurrency(budgetData.overallBudget.total)}
+                </StatNumber>
+                <StatHelpText>Set budget amount</StatHelpText>
               </Stat>
             </CardBody>
           </Card>
-          
-          <Card>
+
+          <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>
               <Stat>
                 <StatLabel>Spent</StatLabel>
-                <StatNumber color="red.500">${mockBudgetData.overall.spent.toLocaleString()}</StatNumber>
+                <StatNumber color="red.500">
+                  {formatCurrency(budgetData.overallBudget.spent)}
+                </StatNumber>
                 <StatHelpText>
-                  <StatArrow type="increase" />
-                  {Math.round(overallPercentage)}% of allocated
+                  {budgetUsage.usagePercentage}% of total budget
                 </StatHelpText>
               </Stat>
             </CardBody>
           </Card>
-          
-          <Card>
+
+          <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>
               <Stat>
                 <StatLabel>Remaining</StatLabel>
-                <StatNumber color="green.500">${mockBudgetData.overall.remaining.toLocaleString()}</StatNumber>
+                <StatNumber color={budgetUsage.isOverBudget ? 'red.500' : 'green.500'}>
+                  {formatCurrency(budgetUsage.remainingAmount)}
+                </StatNumber>
                 <StatHelpText>
-                  {Math.round(remainingPercentage)}% of allocated
+                  {budgetUsage.isOverBudget ? 'Over budget' : 'Available to spend'}
                 </StatHelpText>
               </Stat>
             </CardBody>
           </Card>
-          
-          <Card>
+
+          <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>
               <Stat>
-                <StatLabel>Budget Health</StatLabel>
-                <StatNumber fontSize="lg">
-                  {overallPercentage > 90 ? 'Critical' : overallPercentage > 75 ? 'Warning' : 'Good'}
-                </StatNumber>
-                <Progress 
-                  value={overallPercentage} 
-                  colorScheme={overallPercentage > 90 ? 'red' : overallPercentage > 75 ? 'orange' : 'green'}
-                  size="sm"
-                  mt={2}
-                />
+                <StatLabel>Budget Progress</StatLabel>
+                <StatNumber>{budgetUsage.usagePercentage}%</StatNumber>
+                <StatHelpText>
+                  <Progress 
+                    value={budgetUsage.usagePercentage} 
+                    colorScheme={budgetUsage.isOverBudget ? 'red' : 'purple'} 
+                    size="md" 
+                    mt={2} 
+                  />
+                </StatHelpText>
               </Stat>
             </CardBody>
           </Card>
-        </Grid>
+        </SimpleGrid>
 
-        {/* Main Content */}
-        {selectedView === 'overview' && (
-          <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={6}>
-            {/* Budget Breakdown */}
-            <Card>
-              <CardHeader>
-                <Text fontSize="lg" fontWeight="semibold">Budget Breakdown by Category</Text>
-              </CardHeader>
-              <CardBody>
-                <VStack align="stretch" spacing={4}>
-                  {mockBudgetData.categories.map(category => {
-                    const percentage = category.allocated > 0 ? (category.spent / category.allocated) * 100 : 0
-                    
-                    return (
-                      <Box key={category.id}>
-                        <HStack justify="space-between" mb={2}>
-                          <HStack>
-                            <Text fontWeight="medium">{category.name}</Text>
-                            <Badge colorScheme={statusColors[category.status]} size="sm">
-                              {statusLabels[category.status]}
-                            </Badge>
-                          </HStack>
-                          <Text fontSize="sm" color="neutral.600">
-                            ${category.spent.toLocaleString()} / ${category.allocated.toLocaleString()}
-                          </Text>
-                        </HStack>
-                        <Progress
-                          value={percentage}
-                          colorScheme={
-                            category.status === 'over-budget' ? 'red' :
-                            category.status === 'under-budget' ? 'blue' :
-                            category.status === 'on-budget' ? 'green' : 'gray'
-                          }
-                          size="sm"
-                        />
-                        {category.status === 'over-budget' && (
-                          <HStack mt={1} fontSize="xs" color="red.500">
-                            <AlertTriangle size={12} />
-                            <Text>Over budget by ${Math.abs(category.remaining).toLocaleString()}</Text>
-                          </HStack>
-                        )}
-                      </Box>
-                    )
-                  })}
-                </VStack>
-              </CardBody>
-            </Card>
-
-            {/* Recent Transactions */}
-            <Card>
-              <CardHeader>
-                <HStack justify="space-between">
-                  <Text fontSize="lg" fontWeight="semibold">Recent Transactions</Text>
-                  <Button size="sm" variant="outline">View All</Button>
-                </HStack>
-              </CardHeader>
-              <CardBody>
-                <VStack align="stretch" spacing={3}>
-                  {mockBudgetData.recentTransactions.map(transaction => (
-                    <Box key={transaction.id}>
-                      <HStack justify="space-between" align="start">
-                        <VStack align="start" spacing={1} flex={1}>
-                          <Text fontSize="sm" fontWeight="medium">{transaction.description}</Text>
-                          <Text fontSize="xs" color="neutral.500">
-                            {transaction.vendor} • {transaction.date.toLocaleDateString()}
-                          </Text>
-                          <Badge size="xs" variant="outline">{transaction.category}</Badge>
-                        </VStack>
-                        <Text fontSize="sm" fontWeight="bold" color="red.500">
-                          -${transaction.amount.toLocaleString()}
-                        </Text>
-                      </HStack>
-                      <Divider mt={3} />
-                    </Box>
-                  ))}
-                </VStack>
-              </CardBody>
-            </Card>
-          </Grid>
+        {/* Budget Alert */}
+        {budgetUsage.isOverBudget && (
+          <Alert status="warning" borderRadius="md">
+            <AlertIcon />
+            <AlertTitle>Budget Alert!</AlertTitle>
+            <AlertDescription>
+              You have exceeded your total budget by {formatCurrency(Math.abs(budgetUsage.remainingAmount))}.
+              Consider adjusting your spending or increasing your budget.
+            </AlertDescription>
+          </Alert>
         )}
 
-        {selectedView === 'categories' && (
-          <Card>
-            <CardHeader>
-              <HStack justify="space-between">
-                <Text fontSize="lg" fontWeight="semibold">Budget Categories</Text>
-                <Button leftIcon={<Plus size={16} />} size="sm" variant="outline">
-                  Add Category
-                </Button>
-              </HStack>
-            </CardHeader>
-            <CardBody p={0}>
-              <Table variant="simple">
-                <Thead>
-                  <Tr>
-                    <Th>Category</Th>
-                    <Th>Allocated</Th>
-                    <Th>Spent</Th>
-                    <Th>Remaining</Th>
-                    <Th>Status</Th>
-                    <Th>Vendors</Th>
-                    <Th>Actions</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {mockBudgetData.categories.map(category => (
-                    <Tr key={category.id}>
+        {/* Category Breakdown */}
+        <Card bg={cardBg} borderColor={borderColor}>
+          <CardHeader>
+            <Text fontSize="lg" fontWeight="bold">Budget Categories</Text>
+          </CardHeader>
+          <CardBody>
+            <VStack spacing={4} align="stretch">
+              {budgetData.categories.map((category) => (
+                <Card key={category.id} variant="outline">
+                  <CardBody>
+                    <HStack justify="space-between" align="start">
+                      <VStack align="start" spacing={2} flex={1}>
+                        <HStack>
+                          <Text fontWeight="semibold" fontSize="lg">{category.name}</Text>
+                          <Badge 
+                            colorScheme={getCategoryStatusColor(category.status)} 
+                            variant="solid"
+                            p={1}
+                          >
+                            <HStack spacing={1}>
+                              {getCategoryStatusIcon(category.status)}
+                              <Text>{category.status.replace('_', ' ')}</Text>
+                            </HStack>
+                          </Badge>
+                        </HStack>
+                        <HStack spacing={6}>
+                          <Text fontSize="sm" color="gray.600">
+                            Allocated: <strong>{formatCurrency(category.allocated)}</strong>
+                          </Text>
+                          <Text fontSize="sm" color="gray.600">
+                            Spent: <strong>{formatCurrency(category.spent)}</strong>
+                          </Text>
+                          <Text fontSize="sm" color={category.remaining >= 0 ? 'green.600' : 'red.600'}>
+                            Remaining: <strong>{formatCurrency(category.remaining)}</strong>
+                          </Text>
+                        </HStack>
+                      </VStack>
+                      
+                      <VStack align="end" spacing={2} minW="120px">
+                        <Text fontSize="sm" fontWeight="semibold">
+                          {category.percentage}%
+                        </Text>
+                        <Progress 
+                          value={category.percentage} 
+                          size="md" 
+                          colorScheme={getCategoryStatusColor(category.status)}
+                          width="100%"
+                        />
+                      </VStack>
+                    </HStack>
+                  </CardBody>
+                </Card>
+              ))}
+            </VStack>
+          </CardBody>
+        </Card>
+
+        {/* Recent Transactions */}
+        <Card bg={cardBg} borderColor={borderColor}>
+          <CardHeader>
+            <HStack justify="space-between">
+              <Text fontSize="lg" fontWeight="bold">Recent Transactions</Text>
+              <Button size="sm" variant="outline">
+                View All
+              </Button>
+            </HStack>
+          </CardHeader>
+          <CardBody p={0}>
+            <Table variant="simple">
+              <Thead>
+                <Tr>
+                  <Th>Date</Th>
+                  <Th>Description</Th>
+                  <Th>Category</Th>
+                  <Th>Vendor</Th>
+                  <Th>Amount</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {budgetData.transactions.slice(0, 10).map((transaction) => {
+                  const category = budgetData.categories.find(c => c.id === transaction.categoryId)
+                  return (
+                    <Tr key={transaction.id}>
                       <Td>
-                        <Text fontWeight="medium">{category.name}</Text>
-                      </Td>
-                      <Td>${category.allocated.toLocaleString()}</Td>
-                      <Td color="red.500">${category.spent.toLocaleString()}</Td>
-                      <Td color={category.remaining < 0 ? 'red.500' : 'green.500'}>
-                        ${category.remaining.toLocaleString()}
+                        <Text fontSize="sm">
+                          {formatDateForDisplay(transaction.date)}
+                        </Text>
                       </Td>
                       <Td>
-                        <Badge colorScheme={statusColors[category.status]} size="sm">
-                          {statusLabels[category.status]}
+                        <Text fontSize="sm">{transaction.description}</Text>
+                      </Td>
+                      <Td>
+                        <Badge variant="outline" colorScheme="purple">
+                          {category?.name || 'Unknown'}
                         </Badge>
                       </Td>
                       <Td>
-                        <VStack align="start" spacing={1}>
-                          {category.vendors.map(vendor => (
-                            <Text key={vendor} fontSize="sm">{vendor}</Text>
-                          ))}
-                          {category.vendors.length === 0 && (
-                            <Text fontSize="sm" color="neutral.500">No vendors</Text>
-                          )}
-                        </VStack>
+                        <Text fontSize="sm">{transaction.vendorName || '-'}</Text>
                       </Td>
                       <Td>
-                        <Menu>
-                          <MenuButton as={IconButton} icon={<MoreVertical size={16} />} variant="ghost" size="sm" />
-                          <MenuList>
-                            <MenuItem icon={<Edit size={16} />}>Edit</MenuItem>
-                            <MenuItem icon={<Receipt size={16} />}>View Expenses</MenuItem>
-                            <MenuItem icon={<Trash2 size={16} />} color="red.500">Delete</MenuItem>
-                          </MenuList>
-                        </Menu>
+                        <Text 
+                          fontSize="sm" 
+                          fontWeight="semibold"
+                          color={transaction.amount < 0 ? 'red.500' : 'green.500'}
+                        >
+                          {transaction.amount < 0 ? '-' : '+'}
+                          {formatCurrency(transaction.amount)}
+                        </Text>
                       </Td>
                     </Tr>
-                  ))}
-                </Tbody>
-              </Table>
-            </CardBody>
-          </Card>
-        )}
-
-        {selectedView === 'phases' && (
-          <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
-            {mockBudgetData.phases.map(phase => {
-              const percentage = (phase.spent / phase.allocated) * 100
-              
-              return (
-                <Card key={phase.id}>
-                  <CardHeader>
-                    <HStack justify="space-between">
-                      <Text fontSize="lg" fontWeight="semibold">{phase.name}</Text>
-                      <Badge colorScheme={percentage > 90 ? 'red' : percentage > 75 ? 'orange' : 'green'}>
-                        {Math.round(percentage)}%
-                      </Badge>
-                    </HStack>
-                  </CardHeader>
-                  <CardBody>
-                    <VStack align="stretch" spacing={4}>
-                      <Grid templateColumns="repeat(3, 1fr)" gap={4} textAlign="center">
-                        <VStack spacing={1}>
-                          <Text fontSize="sm" color="neutral.600">Allocated</Text>
-                          <Text fontSize="lg" fontWeight="bold">${phase.allocated.toLocaleString()}</Text>
-                        </VStack>
-                        <VStack spacing={1}>
-                          <Text fontSize="sm" color="neutral.600">Spent</Text>
-                          <Text fontSize="lg" fontWeight="bold" color="red.500">${phase.spent.toLocaleString()}</Text>
-                        </VStack>
-                        <VStack spacing={1}>
-                          <Text fontSize="sm" color="neutral.600">Remaining</Text>
-                          <Text fontSize="lg" fontWeight="bold" color="green.500">${phase.remaining.toLocaleString()}</Text>
-                        </VStack>
-                      </Grid>
-                      
-                      <Progress
-                        value={percentage}
-                        colorScheme={percentage > 90 ? 'red' : percentage > 75 ? 'orange' : 'green'}
-                        size="lg"
-                      />
-                      
-                      <Button variant="outline" size="sm">
-                        View Phase Details
-                      </Button>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              )
-            })}
-          </Grid>
-        )}
-
-        {/* Add Expense Modal */}
-        <Modal isOpen={isAddOpen} onClose={onAddClose} size="lg">
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Add New {addType === 'expense' ? 'Expense' : 'Category'}</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody pb={6}>
-              <VStack spacing={4} align="stretch">
-                <FormControl>
-                  <FormLabel>Type</FormLabel>
-                  <Select value={addType} onChange={(e) => setAddType(e.target.value as 'expense' | 'category')}>
-                    <option value="expense">Expense</option>
-                    <option value="category">Budget Category</option>
-                  </Select>
-                </FormControl>
-
-                {addType === 'expense' ? (
-                  <>
-                    <FormControl>
-                      <FormLabel>Description</FormLabel>
-                      <Input placeholder="Enter expense description..." />
-                    </FormControl>
-
-                    <FormControl>
-                      <FormLabel>Amount</FormLabel>
-                      <NumberInput>
-                        <NumberInputField placeholder="0.00" />
-                        <NumberInputStepper>
-                          <NumberIncrementStepper />
-                          <NumberDecrementStepper />
-                        </NumberInputStepper>
-                      </NumberInput>
-                    </FormControl>
-
-                    <FormControl>
-                      <FormLabel>Category</FormLabel>
-                      <Select placeholder="Select category...">
-                        {mockBudgetData.categories.map(category => (
-                          <option key={category.id} value={category.id}>{category.name}</option>
-                        ))}
-                      </Select>
-                    </FormControl>
-
-                    <FormControl>
-                      <FormLabel>Vendor</FormLabel>
-                      <Input placeholder="Enter vendor name..." />
-                    </FormControl>
-
-                    <FormControl>
-                      <FormLabel>Date</FormLabel>
-                      <Input type="date" />
-                    </FormControl>
-                  </>
-                ) : (
-                  <>
-                    <FormControl>
-                      <FormLabel>Category Name</FormLabel>
-                      <Input placeholder="Enter category name..." />
-                    </FormControl>
-
-                    <FormControl>
-                      <FormLabel>Allocated Amount</FormLabel>
-                      <NumberInput>
-                        <NumberInputField placeholder="0.00" />
-                        <NumberInputStepper>
-                          <NumberIncrementStepper />
-                          <NumberDecrementStepper />
-                        </NumberInputStepper>
-                      </NumberInput>
-                    </FormControl>
-                  </>
-                )}
-
-                <HStack spacing={4} pt={4}>
-                  <Button colorScheme="brand" flex={1}>
-                    Add {addType === 'expense' ? 'Expense' : 'Category'}
-                  </Button>
-                  <Button variant="outline" onClick={onAddClose}>
-                    Cancel
-                  </Button>
-                </HStack>
-              </VStack>
-            </ModalBody>
-          </ModalContent>
-        </Modal>
+                  )
+                })}
+              </Tbody>
+            </Table>
+          </CardBody>
+        </Card>
       </VStack>
     </DashboardLayout>
   )

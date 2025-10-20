@@ -1,5 +1,6 @@
 'use client'
 
+import React, { useState, useEffect } from 'react'
 import {
   Grid,
   Card,
@@ -34,6 +35,14 @@ import {
   Tabs,
   TabList,
   Tab,
+  TabPanels,
+  TabPanel,
+  useColorModeValue,
+  Spinner,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { 
@@ -48,553 +57,464 @@ import {
   Download,
   Upload
 } from 'lucide-react'
-import { useState } from 'react'
-import Link from 'next/link'
-
-// Mock data - will be replaced with real API calls
-const mockGuests = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@email.com',
-    phone: '+1 (555) 123-4567',
-    rsvpStatus: 'attending' as const,
-    dietaryRestrictions: ['Vegetarian'],
-    accommodationNeeds: [],
-    plusOne: { name: 'Mike Johnson', rsvpStatus: 'attending' },
-    phaseAttendance: [
-      { phaseId: 'ceremony', status: 'attending', specialRequests: [] },
-      { phaseId: 'reception', status: 'attending', specialRequests: ['Vegetarian meal'] }
-    ],
-    relationship: 'Friend',
-    side: 'bride'
-  },
-  {
-    id: '2',
-    name: 'Robert Smith',
-    email: 'robert.smith@email.com',
-    phone: '+1 (555) 987-6543',
-    rsvpStatus: 'pending' as const,
-    dietaryRestrictions: [],
-    accommodationNeeds: ['Wheelchair accessible'],
-    plusOne: null,
-    phaseAttendance: [
-      { phaseId: 'ceremony', status: 'pending', specialRequests: [] },
-      { phaseId: 'reception', status: 'pending', specialRequests: [] }
-    ],
-    relationship: 'Uncle',
-    side: 'groom'
-  },
-  {
-    id: '3',
-    name: 'Emily Davis',
-    email: 'emily.davis@email.com',
-    phone: '+1 (555) 456-7890',
-    rsvpStatus: 'declined' as const,
-    dietaryRestrictions: [],
-    accommodationNeeds: [],
-    plusOne: null,
-    phaseAttendance: [
-      { phaseId: 'ceremony', status: 'not-attending', specialRequests: [] },
-      { phaseId: 'reception', status: 'not-attending', specialRequests: [] }
-    ],
-    relationship: 'Colleague',
-    side: 'bride'
-  },
-  {
-    id: '4',
-    name: 'David Wilson',
-    email: 'david.wilson@email.com',
-    phone: '+1 (555) 321-0987',
-    rsvpStatus: 'attending' as const,
-    dietaryRestrictions: ['Gluten-free', 'Dairy-free'],
-    accommodationNeeds: [],
-    plusOne: { name: 'Lisa Wilson', rsvpStatus: 'attending' },
-    phaseAttendance: [
-      { phaseId: 'ceremony', status: 'attending', specialRequests: [] },
-      { phaseId: 'reception', status: 'attending', specialRequests: ['Gluten-free meal'] }
-    ],
-    relationship: 'Cousin',
-    side: 'groom'
-  }
-]
-
-const rsvpStatusColors: Record<string, string> = {
-  pending: 'orange',
-  attending: 'green',
-  declined: 'red'
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const rsvpStatusIcons: Record<string, any> = {
-  pending: Clock,
-  attending: CheckCircle,
-  declined: X
-}
+import { getGuestsData, type GuestListData } from '@/lib/wedding-data-service'
+import { 
+  searchGuests, 
+  sortGuests, 
+  calculateRSVPStats,
+  type GuestFilters,
+  type SortConfig 
+} from '@/lib/data-utils'
 
 export default function GuestsPage() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [rsvpFilter, setRsvpFilter] = useState('')
-  const [sideFilter, setSideFilter] = useState('')
-  const [selectedGuests, setSelectedGuests] = useState<string[]>([])
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
+  const [guests, setGuests] = useState<GuestListData[]>([])
+  const [filteredGuests, setFilteredGuests] = useState<GuestListData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState(0)
   
-  const { isOpen: isImportOpen, onOpen: onImportOpen, onClose: onImportClose } = useDisclosure()
+  // Filter and search state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sideFilter, setSideFilter] = useState('')
+  const [rsvpFilter, setRsvpFilter] = useState('')
+  const [relationshipFilter, setRelationshipFilter] = useState('')
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'name', direction: 'asc' })
+  
+  const cardBg = useColorModeValue('white', 'gray.700')
+  const borderColor = useColorModeValue('gray.200', 'gray.600')
+  
+  const { isOpen, onOpen, onClose } = useDisclosure()
 
-  const filteredGuests = mockGuests.filter(guest => {
-    const matchesSearch = guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         guest.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         guest.relationship.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRsvp = !rsvpFilter || guest.rsvpStatus === rsvpFilter
-    const matchesSide = !sideFilter || guest.side === sideFilter
-    
-    return matchesSearch && matchesRsvp && matchesSide
-  })
+  useEffect(() => {
+    loadGuestsData()
+  }, [])
 
-  const rsvpStatuses = [...new Set(mockGuests.map(g => g.rsvpStatus))]
-  const sides = [...new Set(mockGuests.map(g => g.side))]
+  useEffect(() => {
+    applyFiltersAndSort()
+  }, [guests, searchQuery, sideFilter, rsvpFilter, relationshipFilter, sortConfig])
 
-  const stats = {
-    total: mockGuests.length,
-    attending: mockGuests.filter(g => g.rsvpStatus === 'attending').length,
-    pending: mockGuests.filter(g => g.rsvpStatus === 'pending').length,
-    declined: mockGuests.filter(g => g.rsvpStatus === 'declined').length,
-    plusOnes: mockGuests.filter(g => g.plusOne).length,
-    specialNeeds: mockGuests.filter(g => g.dietaryRestrictions.length > 0 || g.accommodationNeeds.length > 0).length
-  }
-
-  const responseRate = ((stats.attending + stats.declined) / stats.total) * 100
-
-  const handleSelectGuest = (guestId: string) => {
-    setSelectedGuests(prev => 
-      prev.includes(guestId) 
-        ? prev.filter(id => id !== guestId)
-        : [...prev, guestId]
-    )
-  }
-
-  const handleSelectAll = () => {
-    if (selectedGuests.length === filteredGuests.length) {
-      setSelectedGuests([])
-    } else {
-      setSelectedGuests(filteredGuests.map(g => g.id))
+  const loadGuestsData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // getCurrentUser() is called inside getGuestsData()
+      const data = await getGuestsData()
+      setGuests(data)
+    } catch (err) {
+      console.error('Error loading guests data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load guests data')
+      
+      // Fallback to mock data for development
+      setGuests([
+        {
+          id: '1',
+          name: 'Sarah Johnson',
+          email: 'sarah.johnson@email.com',
+          phone: '+1 (555) 123-4567',
+          rsvpStatus: 'CONFIRMED',
+          relationship: 'Friend',
+          side: 'BRIDE',
+          inviteGroup: 'College Friends',
+          tableAssignment: 'Table 3',
+          dietaryRestrictions: ['Vegetarian'],
+          plusOne: {
+            name: 'Mike Johnson',
+            rsvpStatus: 'CONFIRMED'
+          },
+          phaseAttendance: [
+            { phaseId: 'ceremony', status: 'ATTENDING' },
+            { phaseId: 'reception', status: 'ATTENDING' }
+          ]
+        },
+        {
+          id: '2',
+          name: 'Robert Williams',
+          email: 'robert.w@email.com',
+          phone: '+1 (555) 987-6543',
+          rsvpStatus: 'PENDING',
+          relationship: 'Family',
+          side: 'GROOM',
+          inviteGroup: 'Immediate Family',
+          dietaryRestrictions: ['Gluten Free'],
+          phaseAttendance: [
+            { phaseId: 'ceremony', status: 'ATTENDING' },
+            { phaseId: 'reception', status: 'ATTENDING' }
+          ]
+        },
+        {
+          id: '3',
+          name: 'Lisa Brown',
+          email: 'lisa.brown@email.com',
+          rsvpStatus: 'DECLINED',
+          relationship: 'Colleague',
+          side: 'BRIDE',
+          inviteGroup: 'Work Friends',
+          phaseAttendance: [
+            { phaseId: 'ceremony', status: 'NOT_ATTENDING' },
+            { phaseId: 'reception', status: 'NOT_ATTENDING' }
+          ]
+        },
+        {
+          id: '4',
+          name: 'David Miller',
+          email: 'david.miller@email.com',
+          phone: '+1 (555) 456-7890',
+          rsvpStatus: 'CONFIRMED',
+          relationship: 'Friend',
+          side: 'GROOM',
+          inviteGroup: 'Childhood Friends',
+          tableAssignment: 'Table 5',
+          plusOne: {
+            name: 'Jennifer Miller',
+            rsvpStatus: 'CONFIRMED'
+          },
+          phaseAttendance: [
+            { phaseId: 'ceremony', status: 'ATTENDING' },
+            { phaseId: 'reception', status: 'ATTENDING' }
+          ]
+        }
+      ])
+    } finally {
+      setLoading(false)
     }
   }
 
+  const applyFiltersAndSort = () => {
+    let filtered = [...guests]
+    
+    // Apply search
+    if (searchQuery) {
+      filtered = searchGuests(filtered, searchQuery)
+    }
+    
+    // Apply side filter
+    if (sideFilter) {
+      filtered = filtered.filter(guest => guest.side === sideFilter)
+    }
+    
+    // Apply RSVP filter
+    if (rsvpFilter) {
+      filtered = filtered.filter(guest => guest.rsvpStatus === rsvpFilter)
+    }
+    
+    // Apply relationship filter
+    if (relationshipFilter) {
+      filtered = filtered.filter(guest => guest.relationship === relationshipFilter)
+    }
+    
+    // Apply sorting
+    filtered = sortGuests(filtered, sortConfig)
+    
+    setFilteredGuests(filtered)
+  }
+
+  const getRSVPColor = (status: string) => {
+    switch (status) {
+      case 'CONFIRMED': return 'green'
+      case 'DECLINED': return 'red'
+      case 'PENDING': return 'yellow'
+      default: return 'gray'
+    }
+  }
+
+  const getRSVPIcon = (status: string) => {
+    switch (status) {
+      case 'CONFIRMED': return <CheckCircle size={16} />
+      case 'DECLINED': return <X size={16} />
+      case 'PENDING': return <Clock size={16} />
+      default: return null
+    }
+  }
+
+  const rsvpStats = calculateRSVPStats(filteredGuests)
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <VStack spacing={4} py={8}>
+          <Spinner size="xl" color="purple.500" />
+          <Text>Loading guests...</Text>
+        </VStack>
+      </DashboardLayout>
+    )
+  }
+
+  if (error && guests.length === 0) {
+    return (
+      <DashboardLayout>
+        <Alert status="error" borderRadius="md">
+          <AlertIcon />
+          <AlertTitle>Unable to load guests!</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </DashboardLayout>
+    )
+  }
+
   return (
-    <DashboardLayout 
-      title="Guest Management"
-      breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Guests' }
-      ]}
-    >
+    <DashboardLayout>
       <VStack spacing={6} align="stretch">
-        {/* Header Actions */}
-        <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
-          <HStack spacing={4} flex={1}>
-            <InputGroup maxW="300px">
-              <InputLeftElement>
-                <Search size={16} />
-              </InputLeftElement>
-              <Input
-                placeholder="Search guests..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </InputGroup>
-            
-            <Select
-              placeholder="All RSVP Status"
-              maxW="150px"
-              value={rsvpFilter}
-              onChange={(e) => setRsvpFilter(e.target.value)}
-            >
-              {rsvpStatuses.map(status => (
-                <option key={status} value={status}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </option>
-              ))}
-            </Select>
-            
-            <Select
-              placeholder="All Sides"
-              maxW="120px"
-              value={sideFilter}
-              onChange={(e) => setSideFilter(e.target.value)}
-            >
-              {sides.map(side => (
-                <option key={side} value={side}>
-                  {side.charAt(0).toUpperCase() + side.slice(1)}
-                </option>
-              ))}
-            </Select>
-          </HStack>
-          
+        {/* Header */}
+        <Flex justify="space-between" align="center">
+          <Text fontSize="2xl" fontWeight="bold">Guest List</Text>
           <HStack spacing={2}>
-            <Button leftIcon={<Upload size={16} />} variant="outline" onClick={onImportOpen}>
+            <Button leftIcon={<Upload size={16} />} variant="outline">
               Import
             </Button>
             <Button leftIcon={<Download size={16} />} variant="outline">
               Export
             </Button>
-            <Button leftIcon={<Plus size={16} />} colorScheme="brand">
+            <Button leftIcon={<Plus size={16} />} colorScheme="purple">
               Add Guest
             </Button>
           </HStack>
         </Flex>
 
         {/* Stats Cards */}
-        <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)', lg: 'repeat(6, 1fr)' }} gap={4}>
-          <Card>
+        <Grid templateColumns={{ base: '1fr', md: 'repeat(4, 1fr)' }} gap={4}>
+          <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>
-              <VStack align="start" spacing={2}>
-                <Text fontSize="sm" color="neutral.600">Total Guests</Text>
-                <Text fontSize="2xl" fontWeight="bold">{stats.total}</Text>
+              <VStack>
+                <Text fontSize="2xl" fontWeight="bold" color="purple.500">
+                  {rsvpStats.totalGuests}
+                </Text>
+                <Text fontSize="sm" color="gray.600" textAlign="center">
+                  Total Invited
+                </Text>
               </VStack>
             </CardBody>
           </Card>
           
-          <Card>
+          <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>
-              <VStack align="start" spacing={2}>
-                <Text fontSize="sm" color="neutral.600">Attending</Text>
+              <VStack>
                 <Text fontSize="2xl" fontWeight="bold" color="green.500">
-                  {stats.attending}
+                  {rsvpStats.confirmedGuests}
+                </Text>
+                <Text fontSize="sm" color="gray.600" textAlign="center">
+                  Confirmed
                 </Text>
               </VStack>
             </CardBody>
           </Card>
           
-          <Card>
+          <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>
-              <VStack align="start" spacing={2}>
-                <Text fontSize="sm" color="neutral.600">Pending</Text>
-                <Text fontSize="2xl" fontWeight="bold" color="orange.500">
-                  {stats.pending}
+              <VStack>
+                <Text fontSize="2xl" fontWeight="bold" color="yellow.500">
+                  {rsvpStats.pendingGuests}
+                </Text>
+                <Text fontSize="sm" color="gray.600" textAlign="center">
+                  Pending
                 </Text>
               </VStack>
             </CardBody>
           </Card>
           
-          <Card>
+          <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>
-              <VStack align="start" spacing={2}>
-                <Text fontSize="sm" color="neutral.600">Declined</Text>
-                <Text fontSize="2xl" fontWeight="bold" color="red.500">
-                  {stats.declined}
+              <VStack>
+                <Text fontSize="2xl" fontWeight="bold" color="blue.500">
+                  {rsvpStats.responseRate}%
                 </Text>
-              </VStack>
-            </CardBody>
-          </Card>
-          
-          <Card>
-            <CardBody>
-              <VStack align="start" spacing={2}>
-                <Text fontSize="sm" color="neutral.600">Plus Ones</Text>
-                <Text fontSize="2xl" fontWeight="bold">{stats.plusOnes}</Text>
-              </VStack>
-            </CardBody>
-          </Card>
-          
-          <Card>
-            <CardBody>
-              <VStack align="start" spacing={2}>
-                <Text fontSize="sm" color="neutral.600">Response Rate</Text>
-                <Text fontSize="2xl" fontWeight="bold">{Math.round(responseRate)}%</Text>
-                <Progress value={responseRate} colorScheme="brand" size="sm" w="full" />
+                <Text fontSize="sm" color="gray.600" textAlign="center">
+                  Response Rate
+                </Text>
               </VStack>
             </CardBody>
           </Card>
         </Grid>
 
-        {/* View Toggle and Bulk Actions */}
-        <HStack justify="space-between" align="center">
-          <HStack spacing={4}>
-            <Tabs size="sm" onChange={(index) => setViewMode(index === 0 ? 'cards' : 'table')}>
-              <TabList>
-                <Tab>Card View</Tab>
-                <Tab>Table View</Tab>
-              </TabList>
-            </Tabs>
-            
-            {selectedGuests.length > 0 && (
-              <HStack spacing={2}>
-                <Text fontSize="sm" color="neutral.600">
-                  {selectedGuests.length} selected
-                </Text>
-                <Button size="sm" variant="outline">
-                  Send Reminder
-                </Button>
-                <Button size="sm" variant="outline">
-                  Export Selected
-                </Button>
-              </HStack>
-            )}
-          </HStack>
-        </HStack>
-
-        {/* Guests List */}
-        {viewMode === 'cards' ? (
-          <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6}>
-            {filteredGuests.map((guest) => {
-              const StatusIcon = rsvpStatusIcons[guest.rsvpStatus]
-              const isSelected = selectedGuests.includes(guest.id)
+        {/* Filters */}
+        <Card bg={cardBg} borderColor={borderColor}>
+          <CardBody>
+            <Grid templateColumns={{ base: '1fr', md: 'repeat(4, 1fr)' }} gap={4}>
+              <InputGroup>
+                <InputLeftElement pointerEvents="none">
+                  <Search size={16} color="gray" />
+                </InputLeftElement>
+                <Input
+                  placeholder="Search guests..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </InputGroup>
               
-              return (
-                <Card 
-                  key={guest.id} 
-                  _hover={{ shadow: 'md' }} 
-                  cursor="pointer"
-                  borderColor={isSelected ? 'brand.500' : undefined}
-                  borderWidth={isSelected ? '2px' : '1px'}
-                >
-                  <CardBody>
-                    <VStack align="stretch" spacing={4}>
-                      {/* Header */}
-                      <HStack justify="space-between" align="start">
-                        <HStack spacing={3}>
-                          <Checkbox
-                            isChecked={isSelected}
-                            onChange={() => handleSelectGuest(guest.id)}
-                          />
-                          <Avatar
-                            name={guest.name}
-                            size="md"
-                            bg="brand.500"
-                          />
-                          <VStack align="start" spacing={1} flex={1}>
-                            <Link href={`/guests/${guest.id}`}>
-                              <Text fontSize="lg" fontWeight="semibold" _hover={{ color: 'brand.600' }}>
-                                {guest.name}
-                              </Text>
-                            </Link>
-                            <Text fontSize="sm" color="neutral.600">
-                              {guest.relationship} • {guest.side}
-                            </Text>
-                          </VStack>
-                        </HStack>
-                        
-                        <Badge
-                          colorScheme={rsvpStatusColors[guest.rsvpStatus]}
-                          variant="subtle"
-                          display="flex"
-                          alignItems="center"
-                          gap={1}
-                        >
-                          <StatusIcon size={12} />
-                          {guest.rsvpStatus.charAt(0).toUpperCase() + guest.rsvpStatus.slice(1)}
-                        </Badge>
-                      </HStack>
+              <Select
+                placeholder="All Sides"
+                value={sideFilter}
+                onChange={(e) => setSideFilter(e.target.value)}
+              >
+                <option value="BRIDE">Bride's Side</option>
+                <option value="GROOM">Groom's Side</option>
+              </Select>
+              
+              <Select
+                placeholder="All RSVP Status"
+                value={rsvpFilter}
+                onChange={(e) => setRsvpFilter(e.target.value)}
+              >
+                <option value="CONFIRMED">Confirmed</option>
+                <option value="PENDING">Pending</option>
+                <option value="DECLINED">Declined</option>
+              </Select>
+              
+              <Select
+                placeholder="All Relationships"
+                value={relationshipFilter}
+                onChange={(e) => setRelationshipFilter(e.target.value)}
+              >
+                <option value="Family">Family</option>
+                <option value="Friend">Friend</option>
+                <option value="Colleague">Colleague</option>
+                <option value="Other">Other</option>
+              </Select>
+            </Grid>
+          </CardBody>
+        </Card>
 
-                      <Divider />
-
-                      {/* Contact Info */}
-                      <VStack align="start" spacing={2} fontSize="sm" color="neutral.600">
-                        <HStack>
-                          <Mail size={14} />
-                          <Text>{guest.email}</Text>
-                        </HStack>
-                        <HStack>
-                          <Phone size={14} />
-                          <Text>{guest.phone}</Text>
-                        </HStack>
-                      </VStack>
-
-                      {/* Plus One */}
-                      {guest.plusOne && (
-                        <HStack spacing={2}>
-                          <Users size={14} />
-                          <Text fontSize="sm">Plus One: {guest.plusOne.name}</Text>
-                        </HStack>
-                      )}
-
-                      {/* Special Needs */}
-                      {(guest.dietaryRestrictions.length > 0 || guest.accommodationNeeds.length > 0) && (
-                        <VStack align="start" spacing={2}>
-                          {guest.dietaryRestrictions.length > 0 && (
-                            <HStack spacing={2} wrap="wrap">
-                              <Text fontSize="sm" color="neutral.600">Dietary:</Text>
-                              {guest.dietaryRestrictions.map(restriction => (
-                                <Badge key={restriction} size="sm" colorScheme="blue" variant="outline">
-                                  {restriction}
-                                </Badge>
-                              ))}
-                            </HStack>
-                          )}
-                          {guest.accommodationNeeds.length > 0 && (
-                            <HStack spacing={2} wrap="wrap">
-                              <Text fontSize="sm" color="neutral.600">Needs:</Text>
-                              {guest.accommodationNeeds.map(need => (
-                                <Badge key={need} size="sm" colorScheme="purple" variant="outline">
-                                  {need}
-                                </Badge>
-                              ))}
-                            </HStack>
-                          )}
-                        </VStack>
-                      )}
-
-                      {/* Phase Attendance */}
-                      <HStack spacing={2} wrap="wrap">
-                        <Text fontSize="sm" color="neutral.600">Phases:</Text>
-                        {guest.phaseAttendance.map(attendance => (
-                          <Badge 
-                            key={attendance.phaseId} 
-                            size="sm" 
-                            colorScheme={attendance.status === 'attending' ? 'green' : attendance.status === 'pending' ? 'orange' : 'red'}
-                            variant="outline"
-                          >
-                            {attendance.phaseId} - {attendance.status}
-                          </Badge>
-                        ))}
-                      </HStack>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              )
-            })}
-          </Grid>
-        ) : (
-          <Card>
-            <CardBody p={0}>
-              <Table variant="simple">
-                <Thead>
-                  <Tr>
-                    <Th>
-                      <Checkbox
-                        isChecked={selectedGuests.length === filteredGuests.length && filteredGuests.length > 0}
-                        isIndeterminate={selectedGuests.length > 0 && selectedGuests.length < filteredGuests.length}
-                        onChange={handleSelectAll}
-                      />
-                    </Th>
-                    <Th>Name</Th>
-                    <Th>Contact</Th>
-                    <Th>RSVP Status</Th>
-                    <Th>Plus One</Th>
-                    <Th>Special Needs</Th>
-                    <Th>Actions</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {filteredGuests.map(guest => {
-                    const StatusIcon = rsvpStatusIcons[guest.rsvpStatus]
-                    const isSelected = selectedGuests.includes(guest.id)
-                    
-                    return (
-                      <Tr key={guest.id}>
-                        <Td>
-                          <Checkbox
-                            isChecked={isSelected}
-                            onChange={() => handleSelectGuest(guest.id)}
-                          />
-                        </Td>
-                        <Td>
-                          <VStack align="start" spacing={1}>
-                            <Link href={`/guests/${guest.id}`}>
-                              <Text fontWeight="medium" _hover={{ color: 'brand.600' }}>
-                                {guest.name}
-                              </Text>
-                            </Link>
-                            <Text fontSize="sm" color="neutral.600">
-                              {guest.relationship} • {guest.side}
-                            </Text>
-                          </VStack>
-                        </Td>
-                        <Td>
-                          <VStack align="start" spacing={1} fontSize="sm">
-                            <Text>{guest.email}</Text>
-                            <Text color="neutral.600">{guest.phone}</Text>
-                          </VStack>
-                        </Td>
-                        <Td>
-                          <Badge
-                            colorScheme={rsvpStatusColors[guest.rsvpStatus]}
-                            variant="subtle"
-                            display="flex"
-                            alignItems="center"
-                            gap={1}
-                            w="fit-content"
-                          >
-                            <StatusIcon size={12} />
-                            {guest.rsvpStatus.charAt(0).toUpperCase() + guest.rsvpStatus.slice(1)}
-                          </Badge>
-                        </Td>
-                        <Td>
-                          {guest.plusOne ? (
-                            <Text fontSize="sm">{guest.plusOne.name}</Text>
-                          ) : (
-                            <Text fontSize="sm" color="neutral.500">None</Text>
-                          )}
-                        </Td>
-                        <Td>
-                          <VStack align="start" spacing={1}>
-                            {guest.dietaryRestrictions.map(restriction => (
-                              <Badge key={restriction} size="sm" colorScheme="blue" variant="outline">
+        {/* Guest List */}
+        <Card bg={cardBg} borderColor={borderColor}>
+          <CardBody p={0}>
+            <Table variant="simple">
+              <Thead>
+                <Tr>
+                  <Th>
+                    <Checkbox />
+                  </Th>
+                  <Th>Guest</Th>
+                  <Th>Contact</Th>
+                  <Th>RSVP Status</Th>
+                  <Th>Side/Group</Th>
+                  <Th>Table</Th>
+                  <Th>Plus One</Th>
+                  <Th>Actions</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {filteredGuests.map((guest) => (
+                  <Tr key={guest.id}>
+                    <Td>
+                      <Checkbox />
+                    </Td>
+                    <Td>
+                      <VStack align="start" spacing={1}>
+                        <Text fontWeight="semibold">{guest.name}</Text>
+                        <Text fontSize="sm" color="gray.500">
+                          {guest.relationship}
+                        </Text>
+                        {guest.dietaryRestrictions && guest.dietaryRestrictions.length > 0 && (
+                          <HStack spacing={1}>
+                            {guest.dietaryRestrictions.map((restriction) => (
+                              <Badge key={restriction} size="sm" colorScheme="orange" variant="outline">
                                 {restriction}
                               </Badge>
                             ))}
-                            {guest.accommodationNeeds.map(need => (
-                              <Badge key={need} size="sm" colorScheme="purple" variant="outline">
-                                {need}
-                              </Badge>
-                            ))}
-                          </VStack>
-                        </Td>
-                        <Td>
-                          <Button size="sm" variant="outline">
-                            Edit
-                          </Button>
-                        </Td>
-                      </Tr>
-                    )
-                  })}
-                </Tbody>
-              </Table>
-            </CardBody>
-          </Card>
-        )}
+                          </HStack>
+                        )}
+                      </VStack>
+                    </Td>
+                    <Td>
+                      <VStack align="start" spacing={1}>
+                        {guest.email && (
+                          <HStack>
+                            <Mail size={12} />
+                            <Text fontSize="sm">{guest.email}</Text>
+                          </HStack>
+                        )}
+                        {guest.phone && (
+                          <HStack>
+                            <Phone size={12} />
+                            <Text fontSize="sm">{guest.phone}</Text>
+                          </HStack>
+                        )}
+                      </VStack>
+                    </Td>
+                    <Td>
+                      <Badge 
+                        colorScheme={getRSVPColor(guest.rsvpStatus)} 
+                        variant="solid"
+                        p={2}
+                        borderRadius="md"
+                      >
+                        <HStack spacing={1}>
+                          {getRSVPIcon(guest.rsvpStatus)}
+                          <Text>{guest.rsvpStatus}</Text>
+                        </HStack>
+                      </Badge>
+                    </Td>
+                    <Td>
+                      <VStack align="start" spacing={1}>
+                        <Text fontSize="sm" fontWeight="semibold">
+                          {guest.side === 'BRIDE' ? "Bride's Side" : "Groom's Side"}
+                        </Text>
+                        {guest.inviteGroup && (
+                          <Text fontSize="sm" color="gray.500">
+                            {guest.inviteGroup}
+                          </Text>
+                        )}
+                      </VStack>
+                    </Td>
+                    <Td>
+                      <Text fontSize="sm">
+                        {guest.tableAssignment || '-'}
+                      </Text>
+                    </Td>
+                    <Td>
+                      {guest.plusOne ? (
+                        <VStack align="start" spacing={1}>
+                          <Text fontSize="sm" fontWeight="semibold">
+                            {guest.plusOne.name}
+                          </Text>
+                          <Badge 
+                            size="sm" 
+                            colorScheme={getRSVPColor(guest.plusOne.rsvpStatus)}
+                            variant="outline"
+                          >
+                            {guest.plusOne.rsvpStatus}
+                          </Badge>
+                        </VStack>
+                      ) : (
+                        <Text fontSize="sm" color="gray.500">-</Text>
+                      )}
+                    </Td>
+                    <Td>
+                      <HStack spacing={1}>
+                        <Button size="sm" variant="outline">
+                          Edit
+                        </Button>
+                        <Button size="sm" colorScheme="red" variant="outline">
+                          Remove
+                        </Button>
+                      </HStack>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          </CardBody>
+        </Card>
 
-        {filteredGuests.length === 0 && (
-          <Card>
+        {filteredGuests.length === 0 && !loading && (
+          <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>
               <VStack spacing={4} py={8}>
-                <Text fontSize="lg" color="neutral.600">No guests found</Text>
-                <Text fontSize="sm" color="neutral.500">
-                  {searchTerm || rsvpFilter || sideFilter 
-                    ? 'Try adjusting your filters'
-                    : 'Get started by adding your first guest'
+                <Users size={48} color="gray" />
+                <Text fontSize="lg" color="gray.500">No guests found</Text>
+                <Text color="gray.400" textAlign="center">
+                  {searchQuery || sideFilter || rsvpFilter || relationshipFilter
+                    ? 'Try adjusting your search or filters'
+                    : 'Start by adding your first guest'
                   }
                 </Text>
-                <Button leftIcon={<Plus size={16} />} colorScheme="brand">
-                  Add Guest
+                <Button leftIcon={<Plus size={16} />} colorScheme="purple">
+                  Add Your First Guest
                 </Button>
               </VStack>
             </CardBody>
           </Card>
         )}
-
-        {/* Import Modal */}
-        <Modal isOpen={isImportOpen} onClose={onImportClose}>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Import Guest List</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody pb={6}>
-              <VStack spacing={4} align="stretch">
-                <Text fontSize="sm" color="neutral.600">
-                  Upload a CSV file with guest information. The file should include columns for name, email, phone, relationship, and side.
-                </Text>
-                <Button leftIcon={<Upload size={16} />} variant="outline">
-                  Choose File
-                </Button>
-                <Button colorScheme="brand">
-                  Import Guests
-                </Button>
-              </VStack>
-            </ModalBody>
-          </ModalContent>
-        </Modal>
       </VStack>
     </DashboardLayout>
   )

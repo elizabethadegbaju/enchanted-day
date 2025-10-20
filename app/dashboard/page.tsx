@@ -20,6 +20,9 @@ import {
   Spinner,
   Alert,
   AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  useColorModeValue,
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { 
@@ -29,45 +32,17 @@ import {
   CheckCircle, 
   Plus
 } from 'lucide-react'
-import { amplifyDataClient } from '@/lib/amplify-client'
+import { getDashboardData, type DashboardData } from '@/lib/wedding-data-service'
+import { formatDateForDisplay, getDaysUntilDate } from '@/lib/data-utils'
 import type { Wedding } from '@/types'
-
-interface DashboardData {
-  wedding: {
-    id: string;
-    coupleNames: string[];
-    weddingDate: string;
-    status: string;
-  };
-  stats: {
-    daysUntilWedding: number;
-    totalVendors: number;
-    confirmedVendors: number;
-    totalGuests: number;
-    rsvpReceived: number;
-    budgetUsed: number;
-    tasksCompleted: number;
-    totalTasks: number;
-  };
-  recentActivity: Array<{
-    id: number;
-    type: string;
-    message: string;
-    time: string;
-    status: string;
-  }>;
-  upcomingTasks: Array<{
-    id: number;
-    title: string;
-    dueDate: string;
-    priority: string;
-  }>;
-}
 
 export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const cardBg = useColorModeValue('white', 'gray.700')
+  const borderColor = useColorModeValue('gray.200', 'gray.600')
 
   useEffect(() => {
     loadDashboardData()
@@ -79,72 +54,46 @@ export default function DashboardPage() {
       setError(null)
       
       console.log('Loading dashboard data...')
-      console.log('API Base URL:', process.env.NEXT_PUBLIC_API_URL)
       
-      // Get user's weddings using authenticated API client
-      let weddings
+      // getCurrentUser() is called inside getDashboardData()
       try {
-        weddings = await amplifyDataClient.getWeddings()
-        console.log('Weddings fetched:', weddings)
-      } catch (weddingError) {
-        console.error('Failed to fetch weddings:', weddingError)
-        const errorMessage = weddingError instanceof Error ? weddingError.message : 'Unknown error'
-        throw new Error(`Failed to fetch weddings: ${errorMessage}`)
-      }
-      
-      if (weddings.length === 0) {
-        // No weddings yet - use mock data for now
+        const data = await getDashboardData()
+        setDashboardData(data)
+      } catch (dataError) {
+        console.error('Failed to fetch dashboard data:', dataError)
+        
+        // Fallback to mock data for development
         setDashboardData({
           wedding: {
-            id: '1',
-            coupleNames: ['John', 'Jane'],
+            id: 'mock-wedding-id',
+            coupleNames: ['Emma', 'James'],
             weddingDate: '2024-06-15',
-            status: 'planning'
+            status: 'PLANNING'
           },
           stats: {
-            daysUntilWedding: 120,
-            totalVendors: 8,
-            confirmedVendors: 5,
+            daysUntilWedding: 127,
+            totalVendors: 15,
+            confirmedVendors: 8,
             totalGuests: 150,
-            rsvpReceived: 45,
-            budgetUsed: 65,
-            tasksCompleted: 12,
-            totalTasks: 25
+            rsvpReceived: 95,
+            budgetUsed: 68,
+            tasksCompleted: 23,
+            totalTasks: 45
           },
-          recentActivity: [],
-          upcomingTasks: []
+          recentActivity: [
+            { id: '1', type: 'vendor', title: 'Photographer confirmed', description: 'John Smith Photography accepted the contract', timestamp: '2 hours ago', priority: 'high' },
+            { id: '2', type: 'guest', title: 'RSVP received', description: '5 new RSVPs from the Johnson family', timestamp: '4 hours ago' },
+            { id: '3', type: 'task', title: 'Venue walkthrough completed', description: 'Final venue details confirmed with coordinator', timestamp: '1 day ago' },
+            { id: '4', type: 'budget', title: 'Catering payment processed', description: '$3,500 payment to Elegant Catering', timestamp: '2 days ago' }
+          ],
+          upcomingTasks: [
+            { id: '1', title: 'Final headcount to caterer', dueDate: '2024-02-15', priority: 'high', phase: 'Ceremony' },
+            { id: '2', title: 'Confirm transportation', dueDate: '2024-02-18', priority: 'medium', phase: 'Reception' },
+            { id: '3', title: 'Send rehearsal dinner invites', dueDate: '2024-02-20', priority: 'medium', phase: 'Pre-wedding' },
+            { id: '4', title: 'Pick up wedding rings', dueDate: '2024-02-22', priority: 'high', phase: 'Ceremony' }
+          ]
         })
-        return
       }
-
-      // Get dashboard data for the first wedding
-      const wedding = weddings[0]
-      console.log('Fetching dashboard for wedding:', wedding)
-      
-      // Get the primary wedding date (first phase date)
-      const primaryPhase = wedding.phases && wedding.phases.length > 0 ? wedding.phases[0] : null
-      const primaryDate = primaryPhase?.date ? new Date(primaryPhase.date) : new Date()
-      
-      setDashboardData({
-        wedding: {
-          id: wedding.id,
-          coupleNames: wedding.couple_names?.filter((name: any) => name !== null) as string[] || ['John', 'Jane'],
-          weddingDate: primaryDate.toISOString().split('T')[0] || '2024-06-15',
-          status: wedding.status || 'planning'
-        },
-        stats: {
-          daysUntilWedding: 120,
-          totalVendors: 8,
-          confirmedVendors: 5,
-          totalGuests: 150,
-          rsvpReceived: 45,
-          budgetUsed: 65,
-          tasksCompleted: 12,
-          totalTasks: 25
-        },
-        recentActivity: [],
-        upcomingTasks: []
-      })
     } catch (err) {
       console.error('Failed to load dashboard data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load dashboard data')
@@ -335,17 +284,17 @@ export default function DashboardPage() {
                     <Box key={activity.id}>
                       <HStack justify="space-between" align="start">
                         <VStack align="start" spacing={1} flex={1}>
-                          <Text fontSize="sm">{activity.message}</Text>
-                          <Text fontSize="xs" color="neutral.500">{activity.time}</Text>
+                          <Text fontSize="sm">{activity.description}</Text>
+                          <Text fontSize="xs" color="neutral.500">{new Date(activity.timestamp).toLocaleDateString()}</Text>
                         </VStack>
                         <Badge
                           colorScheme={
-                            activity.status === 'success' ? 'green' :
-                            activity.status === 'warning' ? 'orange' : 'blue'
+                            activity.priority === 'HIGH' ? 'red' :
+                            activity.priority === 'MEDIUM' ? 'orange' : 'blue'
                           }
                           size="sm"
                         >
-                          {activity.status}
+                          {activity.priority || 'LOW'}
                         </Badge>
                       </HStack>
                       {index < recentActivity.length - 1 && <Divider mt={3} />}

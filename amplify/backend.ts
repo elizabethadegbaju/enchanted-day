@@ -1,6 +1,6 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
-import { data } from './data/enhanced-resource';
+import { data } from './data/resource';
 import { storage } from './storage/resource';
 import { chat } from './functions/resource';
 

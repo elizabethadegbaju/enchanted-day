@@ -1,5 +1,5 @@
 // Re-export types from the Amplify schema
-import type { Schema } from "@/amplify/data/enhanced-resource";
+import type { Schema } from "@/amplify/data/resource";
 
 // Extract the generated types from the schema
 export type Wedding = Schema["Wedding"]["type"];

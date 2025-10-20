@@ -1,5 +1,5 @@
 import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '@/amplify/data/enhanced-resource';
+import type { Schema } from '@/amplify/data/resource';
 import type { Wedding, Guest, Vendor, OverallBudget, BudgetCategory, WeddingForComponents } from '@/types';
 
 // Generate the Amplify Data client
