@@ -23,7 +23,8 @@ import {
   AlertTitle,
   AlertDescription,
   Divider,
-  Grid
+  Grid,
+  useToast
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { 
@@ -51,6 +52,7 @@ export default function TimelinePage() {
 
   const cardBg = useColorModeValue('white', 'gray.700')
   const borderColor = useColorModeValue('gray.200', 'gray.600')
+  const toast = useToast()
 
   useEffect(() => {
     loadTimelineData()
@@ -113,6 +115,37 @@ export default function TimelinePage() {
     }
   }
 
+  // Handler functions for buttons
+  const handleAddMilestone = () => {
+    toast({
+      title: 'Add Milestone',
+      description: 'Milestone creation feature will be implemented with backend integration',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleAddTask = () => {
+    toast({
+      title: 'Add Task',
+      description: 'Task creation feature will be implemented with backend integration',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleCreateFirstMilestone = () => {
+    toast({
+      title: 'Create Milestone',
+      description: 'Milestone creation wizard will be implemented with backend integration',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -172,7 +205,7 @@ export default function TimelinePage() {
           <CardBody>
             <VStack spacing={4} py={8}>
               <Text fontSize="lg" color="gray.500">No timeline data available</Text>
-              <Button leftIcon={<Plus size={16} />} colorScheme="purple">
+              <Button leftIcon={<Plus size={16} />} colorScheme="purple" onClick={handleCreateFirstMilestone}>
                 Create Your First Milestone
               </Button>
             </VStack>
@@ -189,10 +222,10 @@ export default function TimelinePage() {
         <HStack justify="space-between" align="center">
           <Text fontSize="2xl" fontWeight="bold">Wedding Timeline</Text>
           <HStack spacing={2}>
-            <Button leftIcon={<Target size={16} />} variant="outline">
+            <Button leftIcon={<Target size={16} />} variant="outline" onClick={handleAddMilestone}>
               Add Milestone
             </Button>
-            <Button leftIcon={<Plus size={16} />} colorScheme="purple">
+            <Button leftIcon={<Plus size={16} />} colorScheme="purple" onClick={handleAddTask}>
               Add Task
             </Button>
           </HStack>

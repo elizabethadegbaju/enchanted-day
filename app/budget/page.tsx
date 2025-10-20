@@ -30,7 +30,8 @@ import {
   AlertTitle,
   AlertDescription,
   Divider,
-  Flex
+  Flex,
+  useToast
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { 
@@ -51,6 +52,7 @@ export default function BudgetPage() {
 
   const cardBg = useColorModeValue('white', 'gray.700')
   const borderColor = useColorModeValue('gray.200', 'gray.600')
+  const toast = useToast()
 
   useEffect(() => {
     loadBudgetData()
@@ -98,6 +100,47 @@ export default function BudgetPage() {
       case 'AT_RISK': return <AlertTriangle size={16} />
       default: return null
     }
+  }
+
+  // Handler functions for buttons
+  const handleExportBudget = () => {
+    toast({
+      title: 'Export Budget',
+      description: 'Budget export feature will be implemented - PDF/Excel export functionality',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleAddExpense = () => {
+    toast({
+      title: 'Add Expense',
+      description: 'Expense creation modal will be implemented with backend integration',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleSetupBudget = () => {
+    toast({
+      title: 'Setup Budget',
+      description: 'Budget setup wizard will be implemented with backend integration',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleViewAllTransactions = () => {
+    toast({
+      title: 'View All Transactions',
+      description: 'Navigate to detailed transactions page - will be implemented',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
   }
 
   if (loading) {
@@ -160,7 +203,7 @@ export default function BudgetPage() {
             <VStack spacing={4} py={8}>
               <DollarSign size={48} color="gray" />
               <Text fontSize="lg" color="gray.500">No budget data available</Text>
-              <Button leftIcon={<Plus size={16} />} colorScheme="purple">
+              <Button leftIcon={<Plus size={16} />} colorScheme="purple" onClick={handleSetupBudget}>
                 Set Up Your Budget
               </Button>
             </VStack>
@@ -179,10 +222,10 @@ export default function BudgetPage() {
         <Flex justify="space-between" align="center">
           <Text fontSize="2xl" fontWeight="bold">Wedding Budget</Text>
           <HStack spacing={2}>
-            <Button leftIcon={<Download size={16} />} variant="outline">
+            <Button leftIcon={<Download size={16} />} variant="outline" onClick={handleExportBudget}>
               Export
             </Button>
-            <Button leftIcon={<Plus size={16} />} colorScheme="purple">
+            <Button leftIcon={<Plus size={16} />} colorScheme="purple" onClick={handleAddExpense}>
               Add Expense
             </Button>
           </HStack>
@@ -322,7 +365,7 @@ export default function BudgetPage() {
           <CardHeader>
             <HStack justify="space-between">
               <Text fontSize="lg" fontWeight="bold">Recent Transactions</Text>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={handleViewAllTransactions}>
                 View All
               </Button>
             </HStack>

@@ -35,6 +35,8 @@ import {
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal'
+import { SendMessageModal } from '@/components/common/SendMessageModal'
+import { EditVendorModal } from '@/components/vendors/EditVendorModal'
 import { deleteVendor } from '@/lib/wedding-data-service'
 import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -179,6 +181,8 @@ export default function VendorDetailPage() {
   const router = useRouter()
   const toast = useToast()
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure()
+  const { isOpen: isMessageOpen, onOpen: onMessageOpen, onClose: onMessageClose } = useDisclosure()
   const [isDeleting, setIsDeleting] = useState(false)
   
   // In a real app, fetch vendor data based on useParams().id
@@ -214,6 +218,46 @@ export default function VendorDetailPage() {
       setIsDeleting(false)
       onDeleteClose()
     }
+  }
+
+  // Handler for mark paid
+  const handleMarkPaid = (paymentId: string) => {
+    toast({
+      title: 'Mark Paid',
+      description: 'Payment status update feature will be implemented with backend integration',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleEditVendor = async (updatedVendor: any) => {
+    // TODO: Implement actual vendor update API call
+    console.log('Updating vendor:', updatedVendor)
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+  }
+
+  const handleSendMessage = async (messageData: any) => {
+    // TODO: Implement actual message sending API call
+    console.log('Sending message to vendor:', messageData)
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+  }
+
+  const handleMarkComplete = async (deadlineId: string) => {
+    // TODO: Implement actual deadline completion API call
+    console.log('Marking deadline complete:', deadlineId)
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    toast({
+      title: 'Deadline Completed',
+      description: 'Deadline has been marked as completed',
+      status: 'success',
+      duration: 3000,
+      isClosable: true,
+    })
   }
   
 
@@ -287,10 +331,10 @@ export default function VendorDetailPage() {
               </VStack>
 
               <VStack spacing={3}>
-                <Button leftIcon={<Edit size={16} />} variant="outline">
+                <Button leftIcon={<Edit size={16} />} variant="outline" onClick={onEditOpen}>
                   Edit Vendor
                 </Button>
-                <Button leftIcon={<MessageSquare size={16} />} colorScheme="brand">
+                <Button leftIcon={<MessageSquare size={16} />} colorScheme="brand" onClick={onMessageOpen}>
                   Send Message
                 </Button>
                 <Menu>
@@ -457,8 +501,13 @@ export default function VendorDetailPage() {
                                 </Badge>
                               </HStack>
                             </VStack>
-                            <Button size="sm" variant="outline">
-                              Mark Complete
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleMarkComplete(deadline.id)}
+                              disabled={deadline.status === 'completed'}
+                            >
+                              {deadline.status === 'completed' ? 'Completed' : 'Mark Complete'}
                             </Button>
                           </HStack>
                         </CardBody>
@@ -522,7 +571,7 @@ export default function VendorDetailPage() {
                           </Td>
                           <Td>
                             {payment.status === 'pending' && (
-                              <Button size="sm" colorScheme="brand">
+                              <Button size="sm" colorScheme="brand" onClick={() => handleMarkPaid(payment.description)}>
                                 Mark Paid
                               </Button>
                             )}
@@ -538,6 +587,24 @@ export default function VendorDetailPage() {
         </Card>
       </VStack>
       
+      {/* Edit Vendor Modal */}
+      <EditVendorModal
+        isOpen={isEditOpen}
+        onClose={onEditClose}
+        vendor={vendor}
+        onSave={handleEditVendor}
+      />
+
+      {/* Send Message Modal */}
+      <SendMessageModal
+        isOpen={isMessageOpen}
+        onClose={onMessageClose}
+        recipientName={vendor.name}
+        recipientEmail={vendor.contactInfo.email}
+        recipientPhone={vendor.contactInfo.phone}
+        onSend={handleSendMessage}
+      />
+
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={isDeleteOpen}

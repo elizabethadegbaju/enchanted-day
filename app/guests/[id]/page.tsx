@@ -28,6 +28,9 @@ import {
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal'
+import { SendMessageModal } from '@/components/common/SendMessageModal'
+import { EditGuestModal } from '@/components/guests/EditGuestModal'
+import { AttendanceStatusUpdateModal } from '@/components/guests/AttendanceStatusUpdateModal'
 import { deleteGuest } from '@/lib/wedding-data-service'
 import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -147,7 +150,11 @@ export default function GuestDetailPage() {
   const router = useRouter()
   const toast = useToast()
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure()
+  const { isOpen: isMessageOpen, onOpen: onMessageOpen, onClose: onMessageClose } = useDisclosure()
+  const { isOpen: isStatusOpen, onOpen: onStatusOpen, onClose: onStatusClose } = useDisclosure()
   const [isDeleting, setIsDeleting] = useState(false)
+  const [selectedPhase, setSelectedPhase] = useState<any>(null)
   
   // In a real app, fetch guest data based on useParams().id
   const guest = mockGuestDetails
@@ -181,6 +188,66 @@ export default function GuestDetailPage() {
       setIsDeleting(false)
       onDeleteClose()
     }
+  }
+
+  // Handler for add plus one
+  const handleAddPlusOne = () => {
+    toast({
+      title: 'Add Plus One',
+      description: 'Plus one management feature will be implemented with backend integration',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleEditGuest = async (updatedGuest: any) => {
+    // TODO: Implement actual guest update API call
+    console.log('Updating guest:', updatedGuest)
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    toast({
+      title: 'Guest Updated',
+      description: `${updatedGuest.name} has been updated successfully`,
+      status: 'success',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleSendMessage = async (messageData: any) => {
+    // TODO: Implement actual message sending API call
+    console.log('Sending message:', messageData)
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    toast({
+      title: 'Message Sent',
+      description: `${messageData.type === 'email' ? 'Email' : 'SMS'} sent to ${messageData.recipientName}`,
+      status: 'success',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleUpdatePhaseStatus = (phaseId: string, currentStatus: string) => {
+    const phase = guest.phaseAttendance.find(p => p.phaseId === phaseId)
+    if (phase) {
+      setSelectedPhase(phase)
+      onStatusOpen()
+    }
+  }
+
+  const handleStatusUpdate = async (newStatus: string, notes?: string) => {
+    // TODO: Implement actual status update API call
+    console.log('Updating phase status:', { 
+      phaseId: selectedPhase.phaseId, 
+      newStatus, 
+      notes 
+    })
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
   }
 
 
@@ -246,10 +313,10 @@ export default function GuestDetailPage() {
               </VStack>
 
               <VStack spacing={3}>
-                <Button leftIcon={<Edit size={16} />} variant="outline">
+                <Button leftIcon={<Edit size={16} />} variant="outline" onClick={onEditOpen}>
                   Edit Guest
                 </Button>
-                <Button leftIcon={<MessageSquare size={16} />} colorScheme="brand">
+                <Button leftIcon={<MessageSquare size={16} />} colorScheme="brand" onClick={onMessageOpen}>
                   Send Message
                 </Button>
                 <Menu>
@@ -363,7 +430,11 @@ export default function GuestDetailPage() {
                                 )}
                               </VStack>
 
-                              <Button size="sm" variant="outline">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleUpdatePhaseStatus(attendance.phaseId, attendance.status)}
+                              >
                                 Update Status
                               </Button>
                             </HStack>
@@ -563,7 +634,7 @@ export default function GuestDetailPage() {
                       <Text fontSize="sm" color="neutral.500">
                         This guest is not bringing a plus one to the wedding.
                       </Text>
-                      <Button leftIcon={<Users size={16} />} variant="outline">
+                      <Button leftIcon={<Users size={16} />} variant="outline" onClick={handleAddPlusOne}>
                         Add Plus One
                       </Button>
                     </VStack>
@@ -575,6 +646,36 @@ export default function GuestDetailPage() {
         </Card>
       </VStack>
       
+      {/* Edit Guest Modal */}
+      <EditGuestModal
+        isOpen={isEditOpen}
+        onClose={onEditClose}
+        guest={guest}
+        onSave={handleEditGuest}
+      />
+
+      {/* Send Message Modal */}
+      <SendMessageModal
+        isOpen={isMessageOpen}
+        onClose={onMessageClose}
+        recipientName={guest.name}
+        recipientEmail={guest.email}
+        recipientPhone={guest.phone}
+        onSend={handleSendMessage}
+      />
+
+      {/* Attendance Status Update Modal */}
+      {selectedPhase && (
+        <AttendanceStatusUpdateModal
+          isOpen={isStatusOpen}
+          onClose={onStatusClose}
+          guestName={guest.name}
+          phaseName={selectedPhase.phaseId}
+          currentStatus={selectedPhase.status}
+          onUpdate={handleStatusUpdate}
+        />
+      )}
+
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={isDeleteOpen}

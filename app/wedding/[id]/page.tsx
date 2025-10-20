@@ -127,6 +127,27 @@ export default function WeddingDetailPage() {
     }
   }
 
+  // Handler functions for wedding actions
+  const handleEditDetails = () => {
+    toast({
+      title: 'Edit Details',
+      description: 'Wedding details editing modal will be implemented with backend integration',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleManageWedding = () => {
+    toast({
+      title: 'Manage Wedding',
+      description: 'Wedding management dashboard will be implemented - advanced settings and options',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -230,10 +251,10 @@ export default function WeddingDetailPage() {
               </VStack>
               
               <HStack spacing={2}>
-                <Button leftIcon={<Edit size={16} />} variant="outline">
+                <Button leftIcon={<Edit size={16} />} variant="outline" onClick={handleEditDetails}>
                   Edit Details
                 </Button>
-                <Button leftIcon={<Settings size={16} />} colorScheme="purple">
+                <Button leftIcon={<Settings size={16} />} colorScheme="purple" onClick={handleManageWedding}>
                   Manage
                 </Button>
                 <Menu>

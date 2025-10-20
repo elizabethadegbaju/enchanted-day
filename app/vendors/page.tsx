@@ -22,7 +22,8 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
-  useColorModeValue
+  useColorModeValue,
+  useToast
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { 
@@ -58,6 +59,33 @@ export default function VendorsPage() {
   
   const cardBg = useColorModeValue('white', 'gray.700')
   const borderColor = useColorModeValue('gray.200', 'gray.600')
+  const toast = useToast()
+
+  // Handler functions for buttons
+  const handleAddVendor = () => {
+    toast({
+      title: 'Add Vendor',
+      description: 'Add vendor modal will be implemented with backend integration',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleViewVendorDetails = (vendorId: string) => {
+    // Navigate to vendor detail page
+    window.location.href = `/vendors/${vendorId}`
+  }
+
+  const handleContactVendor = (vendorName: string) => {
+    toast({
+      title: 'Contact Vendor',
+      description: `Contact functionality for ${vendorName} will be implemented`,
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
 
   useEffect(() => {
     loadVendorsData()
@@ -195,7 +223,7 @@ export default function VendorsPage() {
         {/* Header */}
         <Flex justify="space-between" align="center">
           <Text fontSize="2xl" fontWeight="bold">Vendors</Text>
-          <Button leftIcon={<Plus size={16} />} colorScheme="purple">
+          <Button leftIcon={<Plus size={16} />} colorScheme="purple" onClick={handleAddVendor}>
             Add Vendor
           </Button>
         </Flex>
@@ -329,10 +357,10 @@ export default function VendorsPage() {
 
                   {/* Actions */}
                   <HStack spacing={2}>
-                    <Button size="sm" variant="outline" flex={1}>
+                    <Button size="sm" variant="outline" flex={1} onClick={() => handleViewVendorDetails(vendor.id)}>
                       View Details
                     </Button>
-                    <Button size="sm" colorScheme="purple" flex={1}>
+                    <Button size="sm" colorScheme="purple" flex={1} onClick={() => handleContactVendor(vendor.name)}>
                       Contact
                     </Button>
                   </HStack>

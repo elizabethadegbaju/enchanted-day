@@ -42,7 +42,8 @@ import {
   Alert,
   AlertIcon,
   AlertTitle,
-  AlertDescription
+  AlertDescription,
+  useToast
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { 
@@ -84,6 +85,38 @@ export default function GuestsPage() {
   const borderColor = useColorModeValue('gray.200', 'gray.600')
   
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const toast = useToast()
+
+  // Handler functions for buttons
+  const handleImportGuests = () => {
+    toast({
+      title: 'Import Guests',
+      description: 'Guest import feature will be implemented - CSV/Excel upload functionality',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleExportGuests = () => {
+    toast({
+      title: 'Export Guests',
+      description: 'Guest export feature will be implemented - download guest list as CSV/PDF',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const handleAddGuest = () => {
+    toast({
+      title: 'Add Guest',
+      description: 'Add guest modal will be implemented with backend integration',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
 
   useEffect(() => {
     loadGuestsData()
@@ -218,13 +251,13 @@ export default function GuestsPage() {
         <Flex justify="space-between" align="center">
           <Text fontSize="2xl" fontWeight="bold">Guest List</Text>
           <HStack spacing={2}>
-            <Button leftIcon={<Upload size={16} />} variant="outline">
+            <Button leftIcon={<Upload size={16} />} variant="outline" onClick={handleImportGuests}>
               Import
             </Button>
-            <Button leftIcon={<Download size={16} />} variant="outline">
+            <Button leftIcon={<Download size={16} />} variant="outline" onClick={handleExportGuests}>
               Export
             </Button>
-            <Button leftIcon={<Plus size={16} />} colorScheme="purple">
+            <Button leftIcon={<Plus size={16} />} colorScheme="purple" onClick={handleAddGuest}>
               Add Guest
             </Button>
           </HStack>
