@@ -7,9 +7,13 @@ import { amplifyTheme } from '@/theme/amplify-theme'
 import { useState, useEffect } from 'react'
 import AuthWrapper from './AuthWrapper';
 import { ThemeProvider } from '@aws-amplify/ui-react'
+import { Amplify } from 'aws-amplify'
+import outputs from '@/amplify_outputs.json'
 import '@aws-amplify/ui-react/styles.css'
 import './amplify-ui-custom.css'
 import './globals.css'
+
+Amplify.configure(outputs)
 
 export default function RootLayout({
   children,
@@ -24,16 +28,6 @@ export default function RootLayout({
       },
     },
   }))
-
-  // Configure Amplify on client side only
-  useEffect(() => {
-    async function configureAmplify() {
-      const { Amplify } = await import('aws-amplify')
-      const outputs = await import('@/amplify_outputs.json')
-      Amplify.configure(outputs.default)
-    }
-    configureAmplify()
-  }, [])
 
   return (
     <html lang="en">
