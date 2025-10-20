@@ -1,12 +1,12 @@
 import {
-  BedrockAgentCoreClient,
-  InvokeAgentRuntimeCommand,
-} from "@aws-sdk/client-bedrock-agentcore";
+  BedrockAgentRuntimeClient,
+  InvokeAgentCommand,
+} from "@aws-sdk/client-bedrock-agent-runtime";
 import { Handler } from "aws-lambda";
 
 export const handler: Handler = async (event, context) => {
   try {
-    const client = new BedrockAgentCoreClient({ region: "eu-central-1" });
+    const client = new BedrockAgentRuntimeClient({ region: "eu-central-1" });
     
     const payload = {
       prompt: event.prompt,
@@ -14,20 +14,29 @@ export const handler: Handler = async (event, context) => {
     };
     
     const input = {
-      runtimeSessionId: "dfmeoagmreaklgmrkleafremoigrmtesogmtrskhmtkrlshmt",
-      agentRuntimeArn:
-        "arn:aws:bedrock-agentcore:eu-central-1:911167904324:runtime/agents_orchestrator-OY0OdR5xr5",
-      qualifier: "DEFAULT",
-      payload: new TextEncoder().encode(JSON.stringify(payload)),
+      sessionId: "dfmeoagmreaklgmrkleafremoigrmtesogmtrskhmtkrlshmt",
+      agentId: "agents_orchestrator-OY0OdR5xr5",
+      agentAliasId: "TSTALIASID",
+      inputText: JSON.stringify(payload),
     };
 
-    const command = new InvokeAgentRuntimeCommand(input);
+    const command = new InvokeAgentCommand(input);
     const response = await client.send(command);
-    const textResponse = response.response ? await response.response.transformToString() : "No response received";
+    
+    // Process the response stream
+    let textResponse = "";
+    if (response.completion) {
+      for await (const chunk of response.completion) {
+        if (chunk.chunk?.bytes) {
+          const text = new TextDecoder().decode(chunk.chunk.bytes);
+          textResponse += text;
+        }
+      }
+    }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ response: textResponse }),
+      body: JSON.stringify({ response: textResponse || "No response received" }),
     };
   } catch (error) {
     return {
