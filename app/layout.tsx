@@ -4,16 +4,12 @@ import { ChakraProvider } from '@chakra-ui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { theme } from '@/theme'
 import { amplifyTheme } from '@/theme/amplify-theme'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AuthWrapper from './AuthWrapper';
-import outputs from "@/amplify_outputs.json";
-import { Amplify } from 'aws-amplify'
 import { ThemeProvider } from '@aws-amplify/ui-react'
 import '@aws-amplify/ui-react/styles.css'
 import './amplify-ui-custom.css'
 import './globals.css'
-
-Amplify.configure(outputs);
 
 export default function RootLayout({
   children,
@@ -28,6 +24,16 @@ export default function RootLayout({
       },
     },
   }))
+
+  // Configure Amplify on client side only
+  useEffect(() => {
+    async function configureAmplify() {
+      const { Amplify } = await import('aws-amplify')
+      const outputs = await import('@/amplify_outputs.json')
+      Amplify.configure(outputs.default)
+    }
+    configureAmplify()
+  }, [])
 
   return (
     <html lang="en">
