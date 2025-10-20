@@ -3,7 +3,7 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 const schema = a.schema({
   // Enums
   BudgetStatus: a.enum(["ON_BUDGET", "UNDER_BUDGET", "OVER_BUDGET", "NOT_STARTED", "AT_RISK"]),
-  TransactionType: a.enum(["EXPENSE", "INCOME"]),
+  TransactionType: a.enum(["DEPOSIT", "PARTIAL", "FINAL", "ADDITIONAL"]),
   RSVPStatus: a.enum(["PENDING", "ATTENDING", "DECLINED"]),
   PhaseAttendanceStatus: a.enum(["PENDING", "ATTENDING", "NOT_ATTENDING", "MAYBE"]),
   Side: a.enum(["BRIDE", "GROOM"]),
@@ -13,7 +13,7 @@ const schema = a.schema({
   Priority: a.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]),
   ContingencyStatus: a.enum(["ACTIVE", "INACTIVE", "TRIGGERED"]),
   ActionStatus: a.enum(["PENDING", "COMPLETED", "IN_PROGRESS"]),
-  VendorStatus: a.enum(["PENDING", "CONFIRMED", "COMPLETED", "ISSUE"]),
+  VendorStatus: a.enum(["PENDING", "CONFIRMED", "COMPLETED", "ISSUE", "INQUIRED"]),
   ContactMethod: a.enum(["EMAIL", "PHONE"]),
   WeddingStatus: a.enum(["PLANNING", "CONFIRMED", "COMPLETED"]),
   WeddingType: a.enum(["SINGLE_EVENT", "MULTI_PHASE"]),

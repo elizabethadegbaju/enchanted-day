@@ -1549,48 +1549,35 @@ export async function addBudgetExpense(expenseData: {
       targetWeddingId = await getUserPrimaryWedding();
     }
 
-    // Create the transaction
-    const newTransaction = await client.models.Transaction.create({
-      wedding_id: targetWeddingId,
-      category_id: expenseData.categoryId,
-      description: expenseData.description,
-      amount: -Math.abs(expenseData.amount), // Expenses are negative
-      date: expenseData.date,
-      vendor_name: expenseData.vendorName || null,
-      notes: expenseData.notes || null,
-      type: 'EXPENSE'
-    });
-
-    if (!newTransaction.data) {
-      throw new Error('Failed to create expense');
-    }
-
-    // Update category spent amount
+    // Get the current category to update spent amount
     const { data: category } = await client.models.BudgetCategory.get({ 
       id: expenseData.categoryId 
     });
     
-    if (category) {
-      const newSpent = (category.spent || 0) + expenseData.amount;
-      const newRemaining = category.allocated - newSpent;
-
-      let status: "ON_BUDGET" | "UNDER_BUDGET" | "OVER_BUDGET" | "NOT_STARTED" | "AT_RISK" =
-        "ON_BUDGET";
-      if (newSpent > category.allocated) {
-        status = 'OVER_BUDGET';
-      } else if (newSpent / category.allocated > 0.9) {
-        status = 'AT_RISK';
-      } else if (newSpent / category.allocated < 0.8) {
-        status = 'UNDER_BUDGET';
-      }
-
-      await client.models.BudgetCategory.update({
-        id: expenseData.categoryId,
-        spent: newSpent,
-        remaining: newRemaining,
-        status: status ? status : 'ON_BUDGET'
-      });
+    if (!category) {
+      throw new Error('Budget category not found');
     }
+
+    // Update category spent amount
+    const newSpent = (category.spent || 0) + expenseData.amount;
+    const newRemaining = category.allocated - newSpent;
+
+    let status: "ON_BUDGET" | "UNDER_BUDGET" | "OVER_BUDGET" | "NOT_STARTED" | "AT_RISK" =
+      "ON_BUDGET";
+    if (newSpent > category.allocated) {
+      status = 'OVER_BUDGET';
+    } else if (newSpent / category.allocated > 0.9) {
+      status = 'AT_RISK';
+    } else if (newSpent / category.allocated < 0.8) {
+      status = 'UNDER_BUDGET';
+    }
+
+    await client.models.BudgetCategory.update({
+      id: expenseData.categoryId,
+      spent: newSpent,
+      remaining: newRemaining,
+      status: status ? status : 'ON_BUDGET'
+    });
 
     // Update overall wedding budget
     const { data: wedding } = await client.models.Wedding.get({ id: targetWeddingId });
@@ -1618,7 +1605,7 @@ export async function addBudgetExpense(expenseData: {
       performed_by: await getCurrentUserDisplayName()
     });
 
-    return newTransaction.data.id;
+    return category.id;
   } catch (error) {
     console.error('Error adding expense:', error);
     throw error;
@@ -1806,6 +1793,347 @@ export async function importGuests(guestsData: Array<{
     return results;
   } catch (error) {
     console.error('Error in bulk guest import:', error);
+    throw error;
+  }
+}
+
+// ============================================================================
+// VENDOR MANAGEMENT FUNCTIONS
+// ============================================================================
+
+export interface VendorService {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+}
+
+export interface VendorFormData {
+  name: string;
+  primaryCategory: string;
+  secondaryCategory: string;
+  email: string;
+  phone: string;
+  website: string;
+  address: string;
+  preferredContactMethod: 'EMAIL' | 'PHONE';
+  services: VendorService[];
+  totalCost: number;
+  depositRequired: number;
+  contractSigned: boolean;
+  contractDate: string;
+  finalPaymentDue: string;
+  requirements: string[];
+  deliverables: string[];
+  notes: string;
+}
+
+export async function createVendor(vendorData: VendorFormData & { weddingId?: string }): Promise<string> {
+  try {
+    let targetWeddingId = vendorData.weddingId;
+    
+    // If no weddingId provided, get user's primary wedding
+    if (!targetWeddingId) {
+      targetWeddingId = await getUserPrimaryWedding();
+    }
+
+    const newVendor = await client.models.Vendor.create({
+      wedding_id: targetWeddingId,
+      name: vendorData.name,
+      category: {
+        primary: vendorData.primaryCategory,
+        secondary: vendorData.secondaryCategory || null
+      },
+      contact_info: {
+        email: vendorData.email,
+        phone: vendorData.phone,
+        website: vendorData.website || null,
+        address: vendorData.address || null,
+        preferred_contact_method: vendorData.preferredContactMethod
+      },
+      services: vendorData.services.map(service => ({
+        id: service.id,
+        name: service.name,
+        description: service.description,
+        price: service.price,
+        currency: service.currency
+      })),
+      status: 'INQUIRED',
+      total_cost: vendorData.totalCost,
+      contract_signed: vendorData.contractSigned,
+      contract_date: vendorData.contractDate || null,
+      final_payment_due: vendorData.finalPaymentDue || null,
+      requirements: vendorData.requirements || [],
+      deliverables: vendorData.deliverables || []
+    });
+
+    if (!newVendor.data) {
+      throw new Error('Failed to create vendor');
+    }
+
+    // Log activity
+    await createActivity({
+      weddingId: targetWeddingId,
+      type: 'VENDOR_ADDED',
+      title: `Vendor added: ${vendorData.name}`,
+      description: `${vendorData.name} (${vendorData.primaryCategory}) has been added to the vendor list`,
+      relatedEntityType: 'VENDOR',
+      relatedEntityId: newVendor.data.id,
+      priority: 'MEDIUM',
+      isPublic: true
+    });
+
+    return newVendor.data.id;
+  } catch (error) {
+    console.error('Error creating vendor:', error);
+    throw error;
+  }
+}
+
+export interface CommunicationData {
+  type: 'EMAIL' | 'PHONE' | 'MEETING' | 'TEXT';
+  subject?: string;
+  message: string;
+  followUpRequired: boolean;
+  followUpDate?: string;
+  scheduledDate?: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+}
+
+export async function recordVendorCommunication(
+  vendorId: string, 
+  communicationData: CommunicationData
+): Promise<string> {
+  try {
+    // Get vendor details for wedding ID
+    const { data: vendor } = await client.models.Vendor.get({ id: vendorId });
+    if (!vendor) {
+      throw new Error('Vendor not found');
+    }
+
+    // Create communication log
+    const newCommunication = await client.models.VendorCommunication.create({
+      vendor_id: vendorId,
+      type: communicationData.type,
+      subject: communicationData.subject || null,
+      content: communicationData.message,
+      timestamp: communicationData.scheduledDate || new Date().toISOString(),
+      direction: 'OUTBOUND', // Communication initiated by us
+      follow_up_needed: communicationData.followUpRequired,
+      follow_up_date: communicationData.followUpDate || null,
+      status: communicationData.type === 'MEETING' ? 'SCHEDULED' : 'SENT'
+    });
+
+    if (!newCommunication.data) {
+      throw new Error('Failed to record communication');
+    }
+
+    // Update vendor's last contact date
+    await client.models.Vendor.update({
+      id: vendorId,
+      last_contact: new Date().toISOString().split('T')[0],
+      next_followup: communicationData.followUpRequired && communicationData.followUpDate 
+        ? communicationData.followUpDate 
+        : null
+    });
+
+    // Log activity
+    await createActivity({
+      weddingId: vendor.wedding_id,
+      type: 'VENDOR_CONTACTED',
+      title: `${communicationData.type.toLowerCase().replace('_', ' ')} to ${vendor.name}`,
+      description: communicationData.subject || `Contacted ${vendor.name} via ${communicationData.type.toLowerCase()}`,
+      relatedEntityType: 'VENDOR',
+      relatedEntityId: vendorId,
+      priority: communicationData.priority === 'URGENT' ? 'HIGH' : 'MEDIUM',
+      isPublic: true
+    });
+
+    return newCommunication.data.id;
+  } catch (error) {
+    console.error('Error recording vendor communication:', error);
+    throw error;
+  }
+}
+
+export interface PaymentData {
+  amount: number;
+  paymentDate: string;
+  paymentMethod: 'CASH' | 'CHECK' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'BANK_TRANSFER' | 'VENMO' | 'PAYPAL' | 'ZELLE' | 'OTHER';
+  paymentType: 'DEPOSIT' | 'PARTIAL' | 'FINAL' | 'ADDITIONAL';
+  transactionId: string;
+  notes: string;
+  receiptUploaded: boolean;
+  sendConfirmation: boolean;
+}
+
+export async function recordVendorPayment(
+  vendorId: string, 
+  paymentData: PaymentData
+): Promise<string> {
+  try {
+    // Get vendor details
+    const { data: vendor } = await client.models.Vendor.get({ id: vendorId });
+    if (!vendor) {
+      throw new Error('Vendor not found');
+    }
+
+    // Find or create a budget category for this vendor's primary category
+    const { data: budgetCategories } = await client.models.BudgetCategory.list({
+      filter: { 
+        and: [
+          { wedding_id: { eq: vendor.wedding_id } },
+          { name: { eq: vendor.category.primary } }
+        ]
+      }
+    });
+
+    let categoryId = budgetCategories?.[0]?.id;
+
+    if (!categoryId) {
+      // Create category if it doesn't exist
+      const newCategory = await client.models.BudgetCategory.create({
+        wedding_id: vendor.wedding_id,
+        name: vendor.category.primary,
+        allocated: paymentData.amount, // Start with this payment amount
+        spent: paymentData.amount,
+        remaining: 0,
+        percentage: 0, // Will need to be recalculated
+        status: 'ON_BUDGET'
+      });
+      categoryId = newCategory.data?.id!!;
+    } else {
+      // Update existing category
+      const category = budgetCategories[0];
+      const newSpent = (category.spent || 0) + paymentData.amount;
+      const newRemaining = category.allocated - newSpent;
+
+      await client.models.BudgetCategory.update({
+        id: category.id,
+        spent: newSpent,
+        remaining: newRemaining,
+        status: newSpent > category.allocated ? 'OVER_BUDGET' : 'ON_BUDGET'
+      });
+    }
+
+    // Create payment record
+    const newPayment = await client.models.Transaction.create({
+      vendor_id: vendorId,
+      wedding_id: vendor.wedding_id,
+      category_id: categoryId,
+      description: `Payment to ${vendor.name}`,
+      amount: paymentData.amount,
+      date: paymentData.paymentDate,
+      payment_method: paymentData.paymentMethod,
+      type: paymentData.paymentType,
+      vendor_name: vendor.name,
+      notes: paymentData.notes || null,
+      status: 'COMPLETED'
+    });
+
+    if (!newPayment.data) {
+      throw new Error('Failed to record payment');
+    }
+
+    // Get all payments for this vendor to calculate status
+    const { data: allPayments } = await client.models.Transaction.list({
+      filter: { vendor_id: { eq: vendorId } }
+    });
+
+    const totalPaid = (allPayments || []).reduce((sum, payment) => sum + payment.amount, 0);
+    const vendorTotalCost = vendor.total_cost || 0;
+
+    // Update vendor status based on payment
+    let vendorStatus: "PENDING" | "CONFIRMED" | "COMPLETED" | "ISSUE" | "INQUIRED";
+    if (totalPaid <= 0) {
+      vendorStatus = 'PENDING';
+    } else if (totalPaid >= vendorTotalCost) {
+      vendorStatus = 'COMPLETED'; // Vendor is fully paid and work completed
+    } else {
+      vendorStatus = 'CONFIRMED'; // Vendor is confirmed with partial payment
+    }
+
+    await client.models.Vendor.update({
+      id: vendorId,
+      status: vendorStatus
+    });
+
+    // Log activity
+    await createActivity({
+      weddingId: vendor.wedding_id,
+      type: 'VENDOR_PAYMENT_RECORDED',
+      title: `Payment recorded for ${vendor.name}`,
+      description: `Payment of $${paymentData.amount.toLocaleString()} recorded for ${vendor.name}`,
+      relatedEntityType: 'VENDOR',
+      relatedEntityId: vendorId,
+      priority: 'MEDIUM',
+      isPublic: true
+    });
+
+    return newPayment.data.id;
+  } catch (error) {
+    console.error('Error recording vendor payment:', error);
+    throw error;
+  }
+}
+
+export async function getVendorPaymentHistory(vendorId: string): Promise<Array<{
+  id: string;
+  amount: number;
+  paymentDate: string;
+  paymentMethod: string;
+  transactionId?: string;
+  notes?: string;
+  paymentType: 'DEPOSIT' | 'PARTIAL' | 'FINAL' | 'ADDITIONAL';
+}>> {
+  try {
+    const { data: payments } = await client.models.Transaction.list({
+      filter: { vendor_id: { eq: vendorId } }
+    });
+
+    return payments?.map(payment => ({
+      id: payment.id,
+      amount: payment.amount,
+      paymentDate: payment.date,
+      paymentMethod: payment.payment_method || 'Unknown',
+      transactionId: payment.vendor_id || undefined,
+      notes: payment.notes || undefined,
+      paymentType: payment.type
+    })) || [];
+  } catch (error) {
+    console.error('Error fetching vendor payment history:', error);
+    throw error;
+  }
+}
+
+export async function getVendorCommunicationHistory(vendorId: string): Promise<Array<{
+  id: string;
+  date: string;
+  type: 'EMAIL' | 'PHONE' | 'MEETING' | 'TEXT';
+  subject?: string;
+  summary: string;
+  followUpRequired: boolean;
+  followUpDate?: string;
+  status: 'SENT' | 'RECEIVED' | 'COMPLETED';
+}>> {
+  try {
+    const { data: communications } = await client.models.VendorCommunication.list({
+      filter: { vendor_id: { eq: vendorId } }
+    });
+
+    return communications?.map(comm => ({
+      id: comm.id,
+      date: comm.timestamp,
+      type: comm.type as 'EMAIL' | 'PHONE' | 'MEETING' | 'TEXT',
+      subject: comm.subject || undefined,
+      summary: comm.content,
+      followUpRequired: comm.follow_up_needed || false,
+      followUpDate: comm.follow_up_date || undefined,
+      status: comm.status as 'SENT' | 'RECEIVED' | 'COMPLETED'
+    })) || [];
+  } catch (error) {
+    console.error('Error fetching vendor communication history:', error);
     throw error;
   }
 }
