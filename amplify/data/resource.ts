@@ -1,7 +1,7 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { chat } from "../functions/resource";
 
-const schema = a.schema({
+export const schema = a.schema({
   // Enums
   BudgetStatus: a.enum(["ON_BUDGET", "UNDER_BUDGET", "OVER_BUDGET", "NOT_STARTED"]),
   TransactionType: a.enum(["EXPENSE", "INCOME"]),
