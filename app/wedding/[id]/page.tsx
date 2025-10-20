@@ -40,11 +40,13 @@ import {
 import { useParams, useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal'
+import { EditWeddingDetailsModal } from '@/components/wedding/EditWeddingDetailsModal'
+import { ManageWeddingModal } from '@/components/wedding/ManageWeddingModal'
 import { WeddingOverview } from '@/components/wedding/WeddingOverview'
 import { WeddingTimeline } from '@/components/wedding/WeddingTimeline'
 import { WeddingPhases } from '@/components/wedding/WeddingPhases'
 import { WeddingBudgetTracker } from '@/components/wedding/WeddingBudgetTracker'
-import { getWeddingDetailData, deleteWedding, type WeddingDetailData } from '@/lib/wedding-data-service'
+import { getWeddingDetailData, deleteWedding, updateWeddingDetails, updateWeddingSettings, type WeddingDetailData } from '@/lib/wedding-data-service'
 import { formatDateForDisplay, getDaysUntilDate, formatCurrency } from '@/lib/data-utils'
 import { 
   Calendar, 
@@ -63,6 +65,8 @@ export default function WeddingDetailPage() {
   const router = useRouter()
   const toast = useToast()
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure()
+  const { isOpen: isManageOpen, onOpen: onManageOpen, onClose: onManageClose } = useDisclosure()
   const weddingId = params.id as string
   
   const [wedding, setWedding] = useState<WeddingDetailData | null>(null)
@@ -129,23 +133,41 @@ export default function WeddingDetailPage() {
 
   // Handler functions for wedding actions
   const handleEditDetails = () => {
-    toast({
-      title: 'Edit Details',
-      description: 'Wedding details editing modal will be implemented with backend integration',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    })
+    onEditOpen()
   }
 
   const handleManageWedding = () => {
-    toast({
-      title: 'Manage Wedding',
-      description: 'Wedding management dashboard will be implemented - advanced settings and options',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
+    onManageOpen()
+  }
+
+  const handleUpdateWeddingDetails = async (updatedData: {
+    coupleNames: string[];
+    weddingType: 'SINGLE_EVENT' | 'MULTI_PHASE';
+    status: 'PLANNING' | 'COMPLETED' | 'CANCELLED' | 'CONFIRMED';
+    notes?: string;
+  }) => {
+    // Map CONFIRMED to PLANNING for backend compatibility
+    const mappedStatus = updatedData.status === 'CONFIRMED' ? 'PLANNING' : updatedData.status;
+    
+    await updateWeddingDetails({
+      weddingId,
+      coupleNames: updatedData.coupleNames,
+      weddingType: updatedData.weddingType,
+      status: mappedStatus as 'PLANNING' | 'COMPLETED' | 'CANCELLED',
+      notes: updatedData.notes
     })
+    await loadWeddingData() // Refresh the data
+  }
+
+  const handleUpdateWeddingSettings = async (settings: {
+    publicVisibility: boolean;
+    guestCanViewBudget: boolean;
+    allowGuestRSVP: boolean;
+    allowVendorAccess: boolean;
+    emailNotifications: boolean;
+    smsNotifications: boolean;
+  }) => {
+    await updateWeddingSettings(weddingId, settings)
   }
 
   if (loading) {
@@ -251,10 +273,10 @@ export default function WeddingDetailPage() {
               </VStack>
               
               <HStack spacing={2}>
-                <Button leftIcon={<Edit size={16} />} variant="outline" onClick={handleEditDetails}>
+                <Button leftIcon={<Edit size={16} />} variant="outline" onClick={onEditOpen}>
                   Edit Details
                 </Button>
-                <Button leftIcon={<Settings size={16} />} colorScheme="purple" onClick={handleManageWedding}>
+                <Button leftIcon={<Settings size={16} />} colorScheme="purple" onClick={onManageOpen}>
                   Manage
                 </Button>
                 <Menu>
@@ -511,7 +533,29 @@ export default function WeddingDetailPage() {
         </Tabs>
       </VStack>
       
-      {/* Delete Confirmation Modal */}
+      {/* Modals */}
+      {wedding && (
+        <>
+          <EditWeddingDetailsModal
+            isOpen={isEditOpen}
+            onClose={onEditClose}
+            wedding={wedding}
+            onSave={handleUpdateWeddingDetails}
+          />
+
+          <ManageWeddingModal
+            isOpen={isManageOpen}
+            onClose={onManageClose}
+            wedding={{
+              id: wedding.id,
+              coupleNames: wedding.coupleNames,
+              status: wedding.status
+            }}
+            onUpdateSettings={handleUpdateWeddingSettings}
+          />
+        </>
+      )}
+
       <DeleteConfirmationModal
         isOpen={isDeleteOpen}
         onClose={onDeleteClose}

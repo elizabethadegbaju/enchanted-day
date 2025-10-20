@@ -46,6 +46,9 @@ import {
   useToast
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { AddGuestModal } from '@/components/guests/AddGuestModal'
+import { ImportGuestsModal } from '@/components/guests/ImportGuestsModal'
+import { ExportGuestsModal } from '@/components/guests/ExportGuestsModal'
 import { 
   Search, 
   Plus,
@@ -58,7 +61,7 @@ import {
   Download,
   Upload
 } from 'lucide-react'
-import { getGuestsData, type GuestListData } from '@/lib/wedding-data-service'
+import { getGuestsData, createGuest, importGuests, type GuestListData } from '@/lib/wedding-data-service'
 import { 
   searchGuests, 
   sortGuests, 
@@ -84,38 +87,65 @@ export default function GuestsPage() {
   const cardBg = useColorModeValue('white', 'gray.700')
   const borderColor = useColorModeValue('gray.200', 'gray.600')
   
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure()
+  const { isOpen: isImportOpen, onOpen: onImportOpen, onClose: onImportClose } = useDisclosure()
+  const { isOpen: isExportOpen, onOpen: onExportOpen, onClose: onExportClose } = useDisclosure()
   const toast = useToast()
 
   // Handler functions for buttons
   const handleImportGuests = () => {
-    toast({
-      title: 'Import Guests',
-      description: 'Guest import feature will be implemented - CSV/Excel upload functionality',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    })
+    onImportOpen()
   }
 
   const handleExportGuests = () => {
-    toast({
-      title: 'Export Guests',
-      description: 'Guest export feature will be implemented - download guest list as CSV/PDF',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    })
+    onExportOpen()
   }
 
   const handleAddGuest = () => {
-    toast({
-      title: 'Add Guest',
-      description: 'Add guest modal will be implemented with backend integration',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    })
+    onAddOpen()
+  }
+
+  const handleSaveGuest = async (guestData: {
+    name: string;
+    email: string;
+    phone: string;
+    relationship: string;
+    side: 'BRIDE' | 'GROOM';
+    inviteGroup: string;
+    dietaryRestrictions: string[];
+    plusOneName: string;
+    plusOneEmail: string;
+    plusOnePhone: string;
+    hasPlusOne: boolean;
+    notes: string;
+  }) => {
+    await createGuest(guestData)
+    await loadGuestsData() // Refresh the guest list
+  }
+
+  const handleImportGuestsData = async (importedGuests: Array<{
+    name: string;
+    email: string;
+    phone: string;
+    relationship: string;
+    side: 'BRIDE' | 'GROOM';
+    inviteGroup: string;
+    dietaryRestrictions: string[];
+    plusOneName: string;
+  }>) => {
+    const result = await importGuests(importedGuests)
+    
+    if (result.failed > 0) {
+      toast({
+        title: 'Import Completed with Issues',
+        description: `${result.successful} guests imported successfully, ${result.failed} failed`,
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+      })
+    }
+    
+    await loadGuestsData() // Refresh the guest list
   }
 
   useEffect(() => {
@@ -240,30 +270,46 @@ export default function GuestsPage() {
             </Button>
           )}
         </VStack>
+
+        {/* Modals */}
+        <AddGuestModal
+          isOpen={isAddOpen}
+          onClose={onAddClose}
+          onSave={handleSaveGuest}
+        />
+
+        <ImportGuestsModal
+          isOpen={isImportOpen}
+          onClose={onImportClose}
+          onImport={handleImportGuestsData}
+        />
+
+        <ExportGuestsModal
+          isOpen={isExportOpen}
+          onClose={onExportClose}
+          guests={filteredGuests}
+        />
       </DashboardLayout>
     )
-  }
-
-  return (
-    <DashboardLayout>
-      <VStack spacing={6} align="stretch">
-        {/* Header */}
-        <Flex justify="space-between" align="center">
-          <Text fontSize="2xl" fontWeight="bold">Guest List</Text>
-          <HStack spacing={2}>
-            <Button leftIcon={<Upload size={16} />} variant="outline" onClick={handleImportGuests}>
-              Import
-            </Button>
-            <Button leftIcon={<Download size={16} />} variant="outline" onClick={handleExportGuests}>
-              Export
-            </Button>
-            <Button leftIcon={<Plus size={16} />} colorScheme="purple" onClick={handleAddGuest}>
-              Add Guest
-            </Button>
-          </HStack>
-        </Flex>
-
-        {/* Stats Cards */}
+  }    return (
+      <DashboardLayout>
+        <VStack spacing={6} align="stretch">
+          {/* ... existing JSX content remains the same ... */}
+          {/* Header */}
+          <Flex justify="space-between" align="center">
+            <Text fontSize="2xl" fontWeight="bold">Guest List</Text>
+            <HStack spacing={2}>
+              <Button leftIcon={<Upload size={16} />} variant="outline" onClick={handleImportGuests}>
+                Import
+              </Button>
+              <Button leftIcon={<Download size={16} />} variant="outline" onClick={handleExportGuests}>
+                Export
+              </Button>
+              <Button leftIcon={<Plus size={16} />} colorScheme="purple" onClick={handleAddGuest}>
+                Add Guest
+              </Button>
+            </HStack>
+          </Flex>        {/* Stats Cards */}
         <Grid templateColumns={{ base: '1fr', md: 'repeat(4, 1fr)' }} gap={4}>
           <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>

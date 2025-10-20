@@ -201,6 +201,29 @@ const schema = a.schema({
     payment_schedule: a.ref("PaymentScheduleItem").array(),
   }),
 
+  // Wedding Privacy Settings
+  WeddingPrivacySettings: a.customType({
+    public_visibility: a.boolean().required(),
+    guest_can_view_budget: a.boolean().required(),
+    allow_guest_rsvp: a.boolean().required(),
+    allow_vendor_access: a.boolean().required(),
+  }),
+
+  // Wedding Notification Settings
+  WeddingNotificationSettings: a.customType({
+    email_notifications: a.boolean().required(),
+    sms_notifications: a.boolean().required(),
+    push_notifications: a.boolean(),
+    weekly_summaries: a.boolean(),
+  }),
+
+  // Combined Wedding Settings
+  WeddingSettings: a.customType({
+    privacy: a.ref("WeddingPrivacySettings").required(),
+    notifications: a.ref("WeddingNotificationSettings").required(),
+    last_updated: a.datetime(),
+  }),
+
   // Vendor Category
   VendorCategory: a.customType({
     primary: a.string().required(),
@@ -293,6 +316,10 @@ const schema = a.schema({
       hashtag: a.string(),
       registry_links: a.string().array(),
       emergency_contacts: a.json(),
+      
+      // Settings and notes
+      settings: a.ref("WeddingSettings"),
+      notes: a.string(),
       
       // Relations
       phases: a.hasMany("WeddingPhase", "wedding_id"),

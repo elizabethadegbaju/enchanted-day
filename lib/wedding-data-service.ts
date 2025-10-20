@@ -288,6 +288,22 @@ export interface WeddingDetailData {
   status: string;
   overallProgress: number;
   daysUntilWedding: number;
+  notes?: string;
+  settings?: {
+    privacy?: {
+      public_visibility: boolean;
+      guest_can_view_budget: boolean;
+      allow_guest_rsvp: boolean;
+      allow_vendor_access: boolean;
+    };
+    notifications?: {
+      email_notifications: boolean;
+      sms_notifications: boolean;
+      push_notifications?: boolean;
+      weekly_summaries?: boolean;
+    };
+    last_updated?: string;
+  };
   phases: Array<{
     id: string;
     name: string;
@@ -385,6 +401,22 @@ export async function getWeddingDetailData(weddingId: string): Promise<WeddingDe
       status: wedding.status,
       overallProgress,
       daysUntilWedding,
+      notes: wedding.notes || undefined,
+      settings: wedding.settings ? {
+        privacy: wedding.settings.privacy ? {
+          public_visibility: wedding.settings.privacy.public_visibility,
+          guest_can_view_budget: wedding.settings.privacy.guest_can_view_budget,
+          allow_guest_rsvp: wedding.settings.privacy.allow_guest_rsvp,
+          allow_vendor_access: wedding.settings.privacy.allow_vendor_access
+        } : undefined,
+        notifications: wedding.settings.notifications ? {
+          email_notifications: wedding.settings.notifications.email_notifications,
+          sms_notifications: wedding.settings.notifications.sms_notifications,
+          push_notifications: wedding.settings.notifications.push_notifications || undefined,
+          weekly_summaries: wedding.settings.notifications.weekly_summaries || undefined
+        } : undefined,
+        last_updated: wedding.settings.last_updated || undefined
+      } : undefined,
       phases: enhancedPhases,
       overallBudget: wedding.overall_budget ? {
         total: wedding.overall_budget.total,
@@ -1343,6 +1375,101 @@ export async function createTask(taskData: {
 }
 
 // ============================================================================
+// WEDDING MANAGEMENT FUNCTIONS
+// ============================================================================
+
+export async function updateWeddingDetails(weddingData: {
+  weddingId: string;
+  coupleNames?: string[];
+  weddingType?: 'SINGLE_EVENT' | 'MULTI_PHASE';
+  status?: 'PLANNING' | 'COMPLETED' | 'CANCELLED';
+  notes?: string;
+}): Promise<void> {
+  try {
+    const updateData: any = {};
+
+    if (weddingData.coupleNames) {
+      updateData.couple_names = weddingData.coupleNames;
+    }
+    if (weddingData.weddingType) {
+      updateData.wedding_type = weddingData.weddingType;
+    }
+    if (weddingData.status) {
+      updateData.status = weddingData.status;
+    }
+    if (weddingData.notes !== undefined) {
+      updateData.notes = weddingData.notes;
+    }
+
+    await client.models.Wedding.update({
+      id: weddingData.weddingId,
+      ...updateData
+    });
+
+    // Log activity
+    await createActivity({
+      weddingId: weddingData.weddingId,
+      type: 'WEDDING_UPDATED',
+      title: 'Wedding Details Updated',
+      description: `Wedding details have been updated`,
+      priority: 'MEDIUM',
+      isPublic: true
+    });
+
+  } catch (error) {
+    console.error('Error updating wedding details:', error);
+    throw error;
+  }
+}
+
+export interface WeddingSettings {
+  publicVisibility: boolean;
+  guestCanViewBudget: boolean;
+  allowGuestRSVP: boolean;
+  allowVendorAccess: boolean;
+  emailNotifications: boolean;
+  smsNotifications: boolean;
+}
+
+export async function updateWeddingSettings(weddingId: string, settings: WeddingSettings): Promise<void> {
+  try {
+    // Update wedding with proper settings schema
+    await client.models.Wedding.update({
+      id: weddingId,
+      settings: {
+        privacy: {
+          public_visibility: settings.publicVisibility,
+          guest_can_view_budget: settings.guestCanViewBudget,
+          allow_guest_rsvp: settings.allowGuestRSVP,
+          allow_vendor_access: settings.allowVendorAccess
+        },
+        notifications: {
+          email_notifications: settings.emailNotifications,
+          sms_notifications: settings.smsNotifications,
+          push_notifications: false,
+          weekly_summaries: true
+        },
+        last_updated: new Date().toISOString()
+      }
+    });
+
+    // Log activity
+    await createActivity({
+      weddingId,
+      type: 'SETTINGS_UPDATED',
+      title: 'Wedding Settings Updated',
+      description: 'Privacy and notification settings have been updated',
+      priority: 'MEDIUM',
+      isPublic: false
+    });
+
+  } catch (error) {
+    console.error('Error updating wedding settings:', error);
+    throw error;
+  }
+}
+
+// ============================================================================
 // BUDGET MANAGEMENT FUNCTIONS
 // ============================================================================
 
@@ -1494,6 +1621,191 @@ export async function addBudgetExpense(expenseData: {
     return newTransaction.data.id;
   } catch (error) {
     console.error('Error adding expense:', error);
+    throw error;
+  }
+}
+
+// ============================================================================
+// GUEST MANAGEMENT FUNCTIONS
+// ============================================================================
+
+export async function createGuest(guestData: {
+  name: string;
+  email?: string;
+  phone?: string;
+  relationship: string;
+  side: 'BRIDE' | 'GROOM';
+  inviteGroup?: string;
+  dietaryRestrictions?: string[];
+  plusOneName?: string;
+  plusOneEmail?: string;
+  plusOnePhone?: string;
+  hasPlusOne: boolean;
+  notes?: string;
+  weddingId?: string;
+}): Promise<string> {
+  try {
+    let targetWeddingId = guestData.weddingId;
+    
+    // If no weddingId provided, get user's primary wedding
+    if (!targetWeddingId) {
+      targetWeddingId = await getUserPrimaryWedding();
+    }
+
+    // Create plus one first if needed
+    let plusOneId: string | undefined;
+    if (guestData.hasPlusOne && guestData.plusOneName) {
+      const newPlusOne = await client.models.PlusOne.create({
+        name: guestData.plusOneName,
+        email: guestData.plusOneEmail || null,
+        phone: guestData.plusOnePhone || null,
+        rsvp_status: 'PENDING',
+        dietary_restrictions: [],
+        accommodation_needs: [],
+        accessibility_needs: [],
+        phase_attendance: []
+      });
+
+      if (newPlusOne.data) {
+        plusOneId = newPlusOne.data.id;
+      }
+    }
+
+    // Create the guest
+    const newGuest = await client.models.Guest.create({
+      wedding_id: targetWeddingId,
+      name: guestData.name,
+      email: guestData.email || null,
+      phone: guestData.phone || null,
+      rsvp_status: 'PENDING',
+      relationship: guestData.relationship,
+      side: guestData.side,
+      invite_group: guestData.inviteGroup || null,
+      table_assignment: null,
+      dietary_restrictions: guestData.dietaryRestrictions || [],
+      accommodation_needs: [],
+      accessibility_needs: [],
+      plus_one_id: plusOneId || null,
+      address: null,
+      notes: guestData.notes || null,
+      gift_received: false,
+      thank_you_sent: false,
+      phase_attendance: []
+    });
+
+    if (!newGuest.data) {
+      throw new Error('Failed to create guest');
+    }
+
+    // Log activity
+    await createActivity({
+      weddingId: targetWeddingId,
+      type: 'GUEST_ADDED',
+      title: `Guest added: ${guestData.name}`,
+      description: `${guestData.name} has been added to the guest list`,
+      relatedEntityType: 'GUEST',
+      relatedEntityId: newGuest.data.id,
+      priority: 'LOW',
+      isPublic: true
+    });
+
+    return newGuest.data.id;
+  } catch (error) {
+    console.error('Error creating guest:', error);
+    throw error;
+  }
+}
+
+export async function importGuests(guestsData: Array<{
+  name: string;
+  email: string;
+  phone: string;
+  relationship: string;
+  side: 'BRIDE' | 'GROOM';
+  inviteGroup: string;
+  dietaryRestrictions: string[];
+  plusOneName: string;
+}>, weddingId?: string): Promise<{ successful: number; failed: number; errors: string[] }> {
+  try {
+    let targetWeddingId = weddingId;
+    
+    // If no weddingId provided, get user's primary wedding
+    if (!targetWeddingId) {
+      targetWeddingId = await getUserPrimaryWedding();
+    }
+
+    const results = {
+      successful: 0,
+      failed: 0,
+      errors: [] as string[]
+    };
+
+    for (const guestData of guestsData) {
+      try {
+        // Create plus one first if needed
+        let plusOneId: string | undefined;
+        if (guestData.plusOneName) {
+          const newPlusOne = await client.models.PlusOne.create({
+            name: guestData.plusOneName,
+            email: null,
+            phone: null,
+            rsvp_status: 'PENDING',
+            dietary_restrictions: guestData.dietaryRestrictions || [],
+            accommodation_needs: [],
+            accessibility_needs: [],
+            phase_attendance: []
+          });
+
+          if (newPlusOne.data) {
+            plusOneId = newPlusOne.data.id;
+          }
+        }
+
+        // Create the guest
+        await client.models.Guest.create({
+          wedding_id: targetWeddingId,
+          name: guestData.name,
+          email: guestData.email || null,
+          phone: guestData.phone || null,
+          rsvp_status: 'PENDING',
+          relationship: guestData.relationship,
+          side: guestData.side,
+          invite_group: guestData.inviteGroup || null,
+          table_assignment: null,
+          dietary_restrictions: guestData.dietaryRestrictions || [],
+          accommodation_needs: [],
+          accessibility_needs: [],
+          plus_one_id: plusOneId || null,
+          address: null,
+          notes: null,
+          gift_received: false,
+          thank_you_sent: false,
+          phase_attendance: []
+        });
+
+        results.successful++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push(`Failed to import ${guestData.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error(`Error importing guest ${guestData.name}:`, error);
+      }
+    }
+
+    // Log bulk activity
+    if (results.successful > 0) {
+      await createActivity({
+        weddingId: targetWeddingId,
+        type: 'GUESTS_IMPORTED',
+        title: 'Guests imported',
+        description: `Successfully imported ${results.successful} guests from CSV file`,
+        priority: 'MEDIUM',
+        isPublic: true
+      });
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Error in bulk guest import:', error);
     throw error;
   }
 }
