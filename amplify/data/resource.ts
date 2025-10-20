@@ -2,7 +2,7 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 
 const schema = a.schema({
   // Enums
-  BudgetStatus: a.enum(["ON_BUDGET", "UNDER_BUDGET", "OVER_BUDGET", "NOT_STARTED"]),
+  BudgetStatus: a.enum(["ON_BUDGET", "UNDER_BUDGET", "OVER_BUDGET", "NOT_STARTED", "AT_RISK"]),
   TransactionType: a.enum(["EXPENSE", "INCOME"]),
   RSVPStatus: a.enum(["PENDING", "ATTENDING", "DECLINED"]),
   PhaseAttendanceStatus: a.enum(["PENDING", "ATTENDING", "NOT_ATTENDING", "MAYBE"]),

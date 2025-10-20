@@ -31,9 +31,12 @@ import {
   AlertDescription,
   Divider,
   Flex,
-  useToast
+  useToast,
+  useDisclosure
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { AddExpenseModal } from '@/components/budget/AddExpenseModal'
+import { BudgetSetupModal } from '@/components/budget/BudgetSetupModal'
 import { 
   DollarSign,
   TrendingUp,
@@ -42,7 +45,7 @@ import {
   Download,
   AlertTriangle
 } from 'lucide-react'
-import { getBudgetData, type BudgetData } from '@/lib/wedding-data-service'
+import { getBudgetData, setupWeddingBudget, addBudgetExpense, type BudgetData } from '@/lib/wedding-data-service'
 import { calculateBudgetUsage, formatDateForDisplay } from '@/lib/data-utils'
 
 export default function BudgetPage() {
@@ -53,6 +56,10 @@ export default function BudgetPage() {
   const cardBg = useColorModeValue('white', 'gray.700')
   const borderColor = useColorModeValue('gray.200', 'gray.600')
   const toast = useToast()
+
+  // Modal states
+  const { isOpen: isExpenseOpen, onOpen: onExpenseOpen, onClose: onExpenseClose } = useDisclosure()
+  const { isOpen: isSetupOpen, onOpen: onSetupOpen, onClose: onSetupClose } = useDisclosure()
 
   useEffect(() => {
     loadBudgetData()
@@ -114,23 +121,11 @@ export default function BudgetPage() {
   }
 
   const handleAddExpense = () => {
-    toast({
-      title: 'Add Expense',
-      description: 'Expense creation modal will be implemented with backend integration',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    })
+    onExpenseOpen()
   }
 
   const handleSetupBudget = () => {
-    toast({
-      title: 'Setup Budget',
-      description: 'Budget setup wizard will be implemented with backend integration',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    })
+    onSetupOpen()
   }
 
   const handleViewAllTransactions = () => {
@@ -141,6 +136,26 @@ export default function BudgetPage() {
       duration: 3000,
       isClosable: true,
     })
+  }
+
+  // Save handlers
+  const handleSaveBudgetSetup = async (budgetSetupData: any) => {
+    await setupWeddingBudget(budgetSetupData)
+    await loadBudgetData() // Refresh data
+  }
+
+  const handleSaveExpense = async (expenseData: any) => {
+    await addBudgetExpense(expenseData)
+    await loadBudgetData() // Refresh data
+  }
+
+  // Helper to get categories for expense modal
+  const getCategories = () => {
+    if (!budgetData?.categories) return []
+    return budgetData.categories.map(cat => ({
+      id: cat.id,
+      name: cat.name
+    }))
   }
 
   if (loading) {
@@ -420,6 +435,20 @@ export default function BudgetPage() {
           </CardBody>
         </Card>
       </VStack>
+
+      {/* Modals */}
+      <AddExpenseModal
+        isOpen={isExpenseOpen}
+        onClose={onExpenseClose}
+        onSave={handleSaveExpense}
+        categories={getCategories()}
+      />
+      
+      <BudgetSetupModal
+        isOpen={isSetupOpen}
+        onClose={onSetupClose}
+        onSave={handleSaveBudgetSetup}
+      />
     </DashboardLayout>
   )
 }

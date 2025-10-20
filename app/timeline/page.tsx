@@ -24,9 +24,12 @@ import {
   AlertDescription,
   Divider,
   Grid,
-  useToast
+  useToast,
+  useDisclosure
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { AddMilestoneModal } from '@/components/timeline/AddMilestoneModal'
+import { AddTaskModal } from '@/components/timeline/AddTaskModal'
 import { 
   Calendar,
   Clock,
@@ -36,7 +39,7 @@ import {
   Activity,
   Plus
 } from 'lucide-react'
-import { getTimelineData, type TimelineData } from '@/lib/wedding-data-service'
+import { getTimelineData, createMilestone, createTask, type TimelineData } from '@/lib/wedding-data-service'
 import { 
   formatDateForDisplay, 
   formatDateTimeForDisplay, 
@@ -53,6 +56,10 @@ export default function TimelinePage() {
   const cardBg = useColorModeValue('white', 'gray.700')
   const borderColor = useColorModeValue('gray.200', 'gray.600')
   const toast = useToast()
+  
+  // Modal state
+  const { isOpen: isMilestoneOpen, onOpen: onMilestoneOpen, onClose: onMilestoneClose } = useDisclosure()
+  const { isOpen: isTaskOpen, onOpen: onTaskOpen, onClose: onTaskClose } = useDisclosure()
 
   useEffect(() => {
     loadTimelineData()
@@ -117,33 +124,44 @@ export default function TimelinePage() {
 
   // Handler functions for buttons
   const handleAddMilestone = () => {
-    toast({
-      title: 'Add Milestone',
-      description: 'Milestone creation feature will be implemented with backend integration',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    })
+    onMilestoneOpen()
   }
 
   const handleAddTask = () => {
-    toast({
-      title: 'Add Task',
-      description: 'Task creation feature will be implemented with backend integration',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    })
+    onTaskOpen()
   }
 
   const handleCreateFirstMilestone = () => {
-    toast({
-      title: 'Create Milestone',
-      description: 'Milestone creation wizard will be implemented with backend integration',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
+    onMilestoneOpen()
+  }
+
+  // Save handlers
+  const handleSaveMilestone = async (milestoneData: any) => {
+    await createMilestone(milestoneData)
+    await loadTimelineData() // Refresh data
+  }
+
+  const handleSaveTask = async (taskData: any) => {
+    await createTask(taskData)
+    await loadTimelineData() // Refresh data
+  }
+
+  // Helper function to get phases for modals
+  const getPhases = () => {
+    if (!timelineData?.milestones) return []
+    
+    // Extract unique phase information from milestones
+    const phases = new Map()
+    timelineData.milestones.forEach(milestone => {
+      if (milestone.phaseId) {
+        phases.set(milestone.phaseId, {
+          id: milestone.phaseId,
+          name: `Phase ${milestone.phaseId}`
+        })
+      }
     })
+    
+    return Array.from(phases.values())
   }
 
   if (loading) {
@@ -408,6 +426,22 @@ export default function TimelinePage() {
           </TabPanels>
         </Tabs>
       </VStack>
+      
+      {/* Modals */}
+      <AddMilestoneModal
+        isOpen={isMilestoneOpen}
+        onClose={onMilestoneClose}
+        onSave={handleSaveMilestone}
+        phases={getPhases()}
+      />
+      
+      <AddTaskModal
+        isOpen={isTaskOpen}
+        onClose={onTaskClose}
+        onSave={handleSaveTask}
+        phases={getPhases()}
+        existingTasks={timelineData?.tasks || []}
+      />
     </DashboardLayout>
   )
 }

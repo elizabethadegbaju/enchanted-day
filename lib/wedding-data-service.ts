@@ -1234,3 +1234,266 @@ export async function deleteWedding(weddingId: string): Promise<void> {
     throw error;
   }
 }
+
+// ============================================================================
+// TIMELINE MANAGEMENT FUNCTIONS
+// ============================================================================
+
+export async function createMilestone(milestoneData: {
+  name: string;
+  targetDate: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  phaseId?: string;
+  responsibleParties: string[];
+  description?: string;
+  weddingId?: string;
+}): Promise<string> {
+  try {
+    let targetWeddingId = milestoneData.weddingId;
+    
+    // If no weddingId provided, get user's primary wedding
+    if (!targetWeddingId) {
+      targetWeddingId = await getUserPrimaryWedding();
+    }
+
+    const newMilestone = await client.models.Milestone.create({
+      wedding_id: targetWeddingId,
+      name: milestoneData.name,
+      target_date: milestoneData.targetDate,
+      priority: milestoneData.priority,
+      status: 'PENDING',
+      progress_percentage: 0,
+      phase_id: milestoneData.phaseId || null,
+      responsible_parties: milestoneData.responsibleParties,
+      description: milestoneData.description || null
+    });
+
+    if (!newMilestone.data) {
+      throw new Error('Failed to create milestone');
+    }
+
+    // Log activity
+    await client.models.Activity.create({
+      wedding_id: targetWeddingId,
+      type: 'MILESTONE_CREATED',
+      title: `Milestone created: ${milestoneData.name}`,
+      description: `New milestone "${milestoneData.name}" has been added to the timeline`,
+      timestamp: new Date().toISOString(),
+      phase_id: milestoneData.phaseId || null,
+      performed_by: await getCurrentUserDisplayName()
+    });
+
+    return newMilestone.data.id;
+  } catch (error) {
+    console.error('Error creating milestone:', error);
+    throw error;
+  }
+}
+
+export async function createTask(taskData: {
+  title: string;
+  dueDate: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  phaseId?: string;
+  assignedTo: string[];
+  dependencies?: string[];
+  description?: string;
+  weddingId?: string;
+}): Promise<string> {
+  try {
+    let targetWeddingId = taskData.weddingId;
+    
+    // If no weddingId provided, get user's primary wedding
+    if (!targetWeddingId) {
+      targetWeddingId = await getUserPrimaryWedding();
+    }
+
+    const newTask = await client.models.Task.create({
+      wedding_id: targetWeddingId,
+      title: taskData.title,
+      due_date: taskData.dueDate,
+      priority: taskData.priority,
+      status: 'PENDING',
+      phase_id: taskData.phaseId || null,
+      assigned_to: taskData.assignedTo,
+      dependencies: taskData.dependencies || [],
+      description: taskData.description || null
+    });
+
+    if (!newTask.data) {
+      throw new Error('Failed to create task');
+    }
+
+    // Log activity
+    await client.models.Activity.create({
+      wedding_id: targetWeddingId,
+      type: 'TASK_CREATED',
+      title: `Task created: ${taskData.title}`,
+      description: `New task "${taskData.title}" has been added to the timeline`,
+      timestamp: new Date().toISOString(),
+      phase_id: taskData.phaseId || null,
+      performed_by: await getCurrentUserDisplayName()
+    });
+
+    return newTask.data.id;
+  } catch (error) {
+    console.error('Error creating task:', error);
+    throw error;
+  }
+}
+
+// ============================================================================
+// BUDGET MANAGEMENT FUNCTIONS
+// ============================================================================
+
+export async function setupWeddingBudget(budgetData: {
+  totalBudget: number;
+  currency: string;
+  categories: Array<{
+    name: string;
+    allocated: number;
+    percentage: number;
+  }>;
+  weddingId?: string;
+}): Promise<void> {
+  try {
+    let targetWeddingId = budgetData.weddingId;
+    
+    // If no weddingId provided, get user's primary wedding
+    if (!targetWeddingId) {
+      targetWeddingId = await getUserPrimaryWedding();
+    }
+
+    // Update the wedding's overall budget
+    await client.models.Wedding.update({
+      id: targetWeddingId,
+      overall_budget: {
+        total: budgetData.totalBudget,
+        allocated: budgetData.totalBudget,
+        spent: 0,
+        remaining: budgetData.totalBudget,
+        currency: budgetData.currency
+      }
+    });
+
+    // Create budget categories
+    for (const category of budgetData.categories) {
+      await client.models.BudgetCategory.create({
+        wedding_id: targetWeddingId,
+        name: category.name,
+        allocated: category.allocated,
+        spent: 0,
+        remaining: category.allocated,
+        percentage: category.percentage,
+        status: 'ON_BUDGET'
+      });
+    }
+
+    // Log activity
+    await client.models.Activity.create({
+      wedding_id: targetWeddingId,
+      type: 'BUDGET_SETUP',
+      title: 'Budget Setup Complete',
+      description: `Wedding budget of ${budgetData.currency} ${budgetData.totalBudget.toLocaleString()} has been configured`,
+      timestamp: new Date().toISOString(),
+      performed_by: await getCurrentUserDisplayName()
+    });
+
+  } catch (error) {
+    console.error('Error setting up budget:', error);
+    throw error;
+  }
+}
+
+export async function addBudgetExpense(expenseData: {
+  description: string;
+  amount: number;
+  categoryId: string;
+  vendorName?: string;
+  date: string;
+  notes?: string;
+  weddingId?: string;
+}): Promise<string> {
+  try {
+    let targetWeddingId = expenseData.weddingId;
+    
+    // If no weddingId provided, get user's primary wedding
+    if (!targetWeddingId) {
+      targetWeddingId = await getUserPrimaryWedding();
+    }
+
+    // Create the transaction
+    const newTransaction = await client.models.Transaction.create({
+      wedding_id: targetWeddingId,
+      category_id: expenseData.categoryId,
+      description: expenseData.description,
+      amount: -Math.abs(expenseData.amount), // Expenses are negative
+      date: expenseData.date,
+      vendor_name: expenseData.vendorName || null,
+      notes: expenseData.notes || null,
+      type: 'EXPENSE'
+    });
+
+    if (!newTransaction.data) {
+      throw new Error('Failed to create expense');
+    }
+
+    // Update category spent amount
+    const { data: category } = await client.models.BudgetCategory.get({ 
+      id: expenseData.categoryId 
+    });
+    
+    if (category) {
+      const newSpent = (category.spent || 0) + expenseData.amount;
+      const newRemaining = category.allocated - newSpent;
+
+      let status: "ON_BUDGET" | "UNDER_BUDGET" | "OVER_BUDGET" | "NOT_STARTED" | "AT_RISK" =
+        "ON_BUDGET";
+      if (newSpent > category.allocated) {
+        status = 'OVER_BUDGET';
+      } else if (newSpent / category.allocated > 0.9) {
+        status = 'AT_RISK';
+      } else if (newSpent / category.allocated < 0.8) {
+        status = 'UNDER_BUDGET';
+      }
+
+      await client.models.BudgetCategory.update({
+        id: expenseData.categoryId,
+        spent: newSpent,
+        remaining: newRemaining,
+        status: status ? status : 'ON_BUDGET'
+      });
+    }
+
+    // Update overall wedding budget
+    const { data: wedding } = await client.models.Wedding.get({ id: targetWeddingId });
+    if (wedding && wedding.overall_budget) {
+      const currentBudget = wedding.overall_budget;
+      const newSpent = (currentBudget.spent || 0) + expenseData.amount;
+      
+      await client.models.Wedding.update({
+        id: targetWeddingId,
+        overall_budget: {
+          ...currentBudget,
+          spent: newSpent,
+          remaining: currentBudget.total - newSpent
+        }
+      });
+    }
+
+    // Log activity
+    await client.models.Activity.create({
+      wedding_id: targetWeddingId,
+      type: 'EXPENSE_ADDED',
+      title: `Expense added: ${expenseData.description}`,
+      description: `$${expenseData.amount} expense recorded for ${expenseData.description}`,
+      timestamp: new Date().toISOString(),
+      performed_by: await getCurrentUserDisplayName()
+    });
+
+    return newTransaction.data.id;
+  } catch (error) {
+    console.error('Error adding expense:', error);
+    throw error;
+  }
+}
