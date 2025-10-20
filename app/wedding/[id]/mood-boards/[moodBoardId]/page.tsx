@@ -131,7 +131,7 @@ export default function MoodBoardDetailPage() {
   const cardBg = useColorModeValue('white', 'gray.800')
 
   const handleMediaUpload = (files: File[]) => {
-    console.log('Uploading files:', files)
+
     // TODO: Implement file upload logic
     onUploadClose()
   }

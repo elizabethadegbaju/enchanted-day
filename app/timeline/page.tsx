@@ -67,130 +67,7 @@ export default function TimelinePage() {
     } catch (err) {
       console.error('Error loading timeline data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load timeline data')
-      
-      // Fallback to mock data for development
-      setTimelineData({
-        milestones: [
-          {
-            id: '1',
-            name: 'Save the Date Sent',
-            targetDate: '2024-01-15',
-            status: 'COMPLETED',
-            priority: 'HIGH',
-            progress: 100,
-            phaseId: 'pre-wedding',
-            responsibleParties: ['Emma', 'James']
-          },
-          {
-            id: '2',
-            name: 'Invitations Sent',
-            targetDate: '2024-03-01',
-            status: 'IN_PROGRESS',
-            priority: 'HIGH',
-            progress: 75,
-            phaseId: 'pre-wedding',
-            responsibleParties: ['Emma']
-          },
-          {
-            id: '3',
-            name: 'Final Headcount Confirmed',
-            targetDate: '2024-05-15',
-            status: 'PENDING',
-            priority: 'CRITICAL',
-            progress: 0,
-            phaseId: 'ceremony',
-            responsibleParties: ['Emma', 'James', 'Wedding Planner']
-          },
-          {
-            id: '4',
-            name: 'Rehearsal Dinner Setup',
-            targetDate: '2024-06-14',
-            status: 'PENDING',
-            priority: 'MEDIUM',
-            progress: 0,
-            phaseId: 'pre-wedding',
-            responsibleParties: ['Wedding Planner']
-          }
-        ],
-        tasks: [
-          {
-            id: '1',
-            title: 'Book photographer for engagement session',
-            dueDate: '2024-02-14',
-            status: 'COMPLETED',
-            priority: 'HIGH',
-            phaseId: 'pre-wedding',
-            assignedTo: ['Emma'],
-            dependencies: ['photographer-booking']
-          },
-          {
-            id: '2',
-            title: 'Finalize wedding cake design',
-            dueDate: '2024-03-15',
-            status: 'IN_PROGRESS',
-            priority: 'MEDIUM',
-            phaseId: 'reception',
-            assignedTo: ['James', 'Emma'],
-            dependencies: ['venue-confirmation']
-          },
-          {
-            id: '3',
-            title: 'Order wedding favors',
-            dueDate: '2024-04-01',
-            status: 'PENDING',
-            priority: 'LOW',
-            phaseId: 'reception',
-            assignedTo: ['Emma']
-          },
-          {
-            id: '4',
-            title: 'Schedule hair and makeup trial',
-            dueDate: '2024-02-20',
-            status: 'OVERDUE',
-            priority: 'HIGH',
-            phaseId: 'ceremony',
-            assignedTo: ['Emma']
-          }
-        ],
-        activities: [
-          {
-            id: '1',
-            type: 'MILESTONE_COMPLETED',
-            title: 'Save the Date milestone completed',
-            description: 'All save the date cards have been sent to guests',
-            timestamp: '2024-01-15T10:30:00Z',
-            phaseId: 'pre-wedding',
-            performedBy: 'Emma'
-          },
-          {
-            id: '2',
-            type: 'TASK_COMPLETED',
-            title: 'Photographer booked',
-            description: 'Engagement session photographer confirmed for February 14th',
-            timestamp: '2024-01-20T14:15:00Z',
-            phaseId: 'pre-wedding',
-            performedBy: 'Emma'
-          },
-          {
-            id: '3',
-            type: 'VENDOR_CONFIRMED',
-            title: 'Caterer confirmed',
-            description: 'Elegant Catering confirmed for reception service',
-            timestamp: '2024-01-25T09:45:00Z',
-            phaseId: 'reception',
-            performedBy: 'James'
-          },
-          {
-            id: '4',
-            type: 'TASK_UPDATED',
-            title: 'Wedding cake design in progress',
-            description: 'Started working with baker on custom cake design',
-            timestamp: '2024-01-28T16:20:00Z',
-            phaseId: 'reception',
-            performedBy: 'Emma'
-          }
-        ]
-      })
+      setTimelineData(null)
     } finally {
       setLoading(false)
     }
@@ -248,13 +125,42 @@ export default function TimelinePage() {
   }
 
   if (error && !timelineData) {
+    const isNoWeddingsError = error.includes('No weddings found')
+    
     return (
       <DashboardLayout>
-        <Alert status="error" borderRadius="md">
-          <AlertIcon />
-          <AlertTitle>Unable to load timeline!</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <VStack spacing={6} align="center" py={12}>
+          <Alert status={isNoWeddingsError ? "info" : "error"} maxW="md">
+            <AlertIcon />
+            <VStack spacing={2} align="start">
+              <AlertTitle>
+                {isNoWeddingsError ? "No Wedding Found" : "Unable to load timeline!"}
+              </AlertTitle>
+              <AlertDescription>
+                {isNoWeddingsError 
+                  ? "Please create a wedding first to view your timeline."
+                  : error
+                }
+              </AlertDescription>
+            </VStack>
+          </Alert>
+          
+          {isNoWeddingsError ? (
+            <Button 
+              as="a" 
+              href="/wedding/create" 
+              colorScheme="brand" 
+              size="lg"
+              leftIcon={<Plus />}
+            >
+              Create Your Wedding
+            </Button>
+          ) : (
+            <Button onClick={loadTimelineData} colorScheme="brand">
+              Retry
+            </Button>
+          )}
+        </VStack>
       </DashboardLayout>
     )
   }

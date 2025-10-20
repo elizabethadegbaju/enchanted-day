@@ -928,6 +928,125 @@ export async function getBudgetData(weddingId?: string): Promise<BudgetData> {
 }
 
 // ============================================================================
+// MOOD BOARD MANAGEMENT
+// ============================================================================
+
+export async function createMoodBoard(moodBoardData: {
+  name: string;
+  description?: string;
+  phaseId?: string;
+  weddingId?: string;
+}): Promise<string> {
+  try {
+    let targetWeddingId = moodBoardData.weddingId;
+    
+    // If no weddingId provided, get user's primary wedding
+    if (!targetWeddingId) {
+      targetWeddingId = await getUserPrimaryWedding();
+    }
+
+    const newMoodBoard = await client.models.MoodBoard.create({
+      wedding_id: targetWeddingId,
+      name: moodBoardData.name,
+      description: moodBoardData.description || '',
+      phase_id: moodBoardData.phaseId || undefined,
+      images: [],
+      videos: [],
+      inspiration_links: [],
+      color_palette: {
+        primary: [],
+        secondary: [],
+        accent: [],
+        neutral: []
+      },
+      style_keywords: [],
+      is_public: true,
+      is_finalized: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+
+    if (!newMoodBoard.data) {
+      throw new Error('Failed to create mood board');
+    }
+
+    // Log the mood board creation activity
+    await createActivity({
+      weddingId: targetWeddingId,
+      type: 'MOOD_BOARD_CREATED',
+      title: 'New Mood Board Created',
+      description: `Created mood board "${moodBoardData.name}"`,
+      phaseId: moodBoardData.phaseId,
+      relatedEntityType: 'MOOD_BOARD',
+      relatedEntityId: newMoodBoard.data.id,
+      priority: 'MEDIUM',
+      isPublic: true
+    });
+
+    return newMoodBoard.data.id;
+  } catch (error) {
+    console.error('Error creating mood board:', error);
+    throw error;
+  }
+}
+
+export async function getMoodBoardDetail(moodBoardId: string): Promise<any> {
+  try {
+    const { data: moodBoard } = await client.models.MoodBoard.get({ id: moodBoardId });
+    
+    if (!moodBoard) {
+      throw new Error('Mood board not found');
+    }
+
+    return {
+      id: moodBoard.id,
+      name: moodBoard.name,
+      description: moodBoard.description || '',
+      phaseId: moodBoard.phase_id || undefined,
+      weddingId: moodBoard.wedding_id,
+      images: moodBoard.images?.filter((img): img is NonNullable<typeof img> => img !== null && img !== undefined)
+        .map(img => ({
+          id: img.id,
+          url: img.url,
+          filename: img.filename
+        })) || [],
+      videos: moodBoard.videos?.filter((vid): vid is NonNullable<typeof vid> => vid !== null && vid !== undefined)
+        .map(vid => ({
+          id: vid.id,
+          url: vid.url,
+          filename: vid.filename
+        })) || [],
+      inspirationLinks: moodBoard.inspiration_links?.filter((link): link is NonNullable<typeof link> => link !== null && link !== undefined)
+        .map(link => ({
+          id: link.id,
+          url: link.url,
+          title: link.title,
+          description: link.description || ''
+        })) || [],
+      colorPalette: moodBoard.color_palette ? {
+        primary: moodBoard.color_palette.primary || [],
+        secondary: moodBoard.color_palette.secondary || [],
+        accent: moodBoard.color_palette.accent || [],
+        neutral: moodBoard.color_palette.neutral || []
+      } : {
+        primary: [],
+        secondary: [],
+        accent: [],
+        neutral: []
+      },
+      styleKeywords: moodBoard.style_keywords?.filter((keyword): keyword is string => keyword !== null && keyword !== undefined) || [],
+      isPublic: moodBoard.is_public ?? true,
+      isFinalized: moodBoard.is_finalized ?? false,
+      createdAt: moodBoard.created_at || new Date().toISOString(),
+      updatedAt: moodBoard.updated_at || new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Error fetching mood board detail:', error);
+    throw error;
+  }
+}
+
+// ============================================================================
 // ACTIVITY LOGGING HELPERS
 // ============================================================================
 

@@ -78,79 +78,7 @@ export default function WeddingDetailPage() {
     } catch (err) {
       console.error('Error loading wedding data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load wedding data')
-      
-      // Fallback to mock data for development
-      setWedding({
-        id: weddingId,
-        coupleNames: ['Emma', 'James'],
-        weddingType: 'MULTI_PHASE',
-        status: 'PLANNING',
-        overallProgress: 68,
-        daysUntilWedding: 127,
-        phases: [
-          {
-            id: '1',
-            name: 'Ceremony',
-            date: '2024-06-15',
-            status: 'PLANNING',
-            progress: 75,
-            venue: {
-              name: 'St. Mary\'s Cathedral',
-              location: '123 Church St, City',
-              capacity: 200
-            },
-            guestCount: 150,
-            budget: {
-              total: 15000,
-              spent: 8500,
-              remaining: 6500,
-              currency: 'USD'
-            },
-            vendors: { total: 8, confirmed: 5 },
-            tasks: { completed: 12, total: 18 }
-          },
-          {
-            id: '2',
-            name: 'Reception',
-            date: '2024-06-15',
-            status: 'PLANNING',
-            progress: 60,
-            venue: {
-              name: 'Grand Ballroom',
-              location: '456 Event Ave, City',
-              capacity: 180
-            },
-            guestCount: 150,
-            budget: {
-              total: 25000,
-              spent: 12000,
-              remaining: 13000,
-              currency: 'USD'
-            },
-            vendors: { total: 6, confirmed: 3 },
-            tasks: { completed: 8, total: 15 }
-          }
-        ],
-        overallBudget: {
-          total: 40000,
-          allocated: 38000,
-          spent: 20500,
-          remaining: 19500,
-          currency: 'USD',
-          categories: [
-            { name: 'Venue', allocated: 15000, spent: 10000, percentage: 25 },
-            { name: 'Catering', allocated: 12000, spent: 6000, percentage: 20 },
-            { name: 'Photography', allocated: 5000, spent: 2500, percentage: 15 },
-            { name: 'Florals', allocated: 3000, spent: 1500, percentage: 10 },
-            { name: 'Music', allocated: 2000, spent: 500, percentage: 8 }
-          ]
-        },
-        preferences: {
-          style: 'Classic Elegant',
-          colorPalette: ['#8B5A96', '#F5E6D3', '#E8B4B8'],
-          theme: 'Garden Romance'
-        }
-      })
+      setWedding(null)
     } finally {
       setLoading(false)
     }
@@ -168,13 +96,34 @@ export default function WeddingDetailPage() {
   }
 
   if (error && !wedding) {
+    const isWeddingNotFound = error.includes('Wedding not found')
+    
     return (
       <DashboardLayout>
-        <Alert status="error" borderRadius="md">
-          <AlertIcon />
-          <AlertTitle>Unable to load wedding details!</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <VStack spacing={6} align="center" py={12}>
+          <Alert status={isWeddingNotFound ? "warning" : "error"} maxW="md">
+            <AlertIcon />
+            <VStack spacing={2} align="start">
+              <AlertTitle>
+                {isWeddingNotFound ? "Wedding Not Found" : "Unable to load wedding details!"}
+              </AlertTitle>
+              <AlertDescription>
+                {isWeddingNotFound 
+                  ? "The wedding you're looking for doesn't exist or you don't have access to it."
+                  : error
+                }
+              </AlertDescription>
+            </VStack>
+          </Alert>
+          
+          <Button 
+            onClick={() => router.push('/dashboard')} 
+            colorScheme="brand"
+            size="lg"
+          >
+            Back to Dashboard
+          </Button>
+        </VStack>
       </DashboardLayout>
     )
   }

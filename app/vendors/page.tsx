@@ -78,66 +78,7 @@ export default function VendorsPage() {
     } catch (err) {
       console.error('Error loading vendors data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load vendors data')
-      
-      // Fallback to mock data for development
-      setVendors([
-        {
-          id: '1',
-          name: 'Elegant Photography Studio',
-          category: { primary: 'Photography', secondary: 'Wedding Photography' },
-          contactInfo: {
-            email: 'contact@elegantphoto.com',
-            phone: '+1 (555) 123-4567',
-            preferredContactMethod: 'email' as const
-          },
-          status: 'CONFIRMED',
-          totalCost: 3500,
-          rating: 4.8,
-          lastContact: '2024-01-15',
-          nextFollowup: '2024-02-15',
-          services: [
-            { id: 's1', name: 'Wedding Photography Package', price: 2500, currency: 'USD' },
-            { id: 's2', name: 'Engagement Photos', price: 500, currency: 'USD' }
-          ]
-        },
-        {
-          id: '2',
-          name: 'Gourmet Catering Co.',
-          category: { primary: 'Catering', secondary: 'Fine Dining' },
-          contactInfo: {
-            email: 'events@gourmetcatering.com',
-            phone: '+1 (555) 987-6543',
-            preferredContactMethod: 'phone' as const
-          },
-          status: 'PENDING',
-          totalCost: 8000,
-          rating: 4.6,
-          lastContact: '2024-01-20',
-          nextFollowup: '2024-02-10',
-          services: [
-            { id: 's3', name: 'Full Service Catering', price: 8000, currency: 'USD' }
-          ]
-        },
-        {
-          id: '3',
-          name: 'Blooming Gardens Florist',
-          category: { primary: 'Florals', secondary: 'Wedding Flowers' },
-          contactInfo: {
-            email: 'hello@bloominggardens.com',
-            phone: '+1 (555) 456-7890',
-            preferredContactMethod: 'email' as const
-          },
-          status: 'CONTACTED',
-          totalCost: 2200,
-          rating: 4.9,
-          lastContact: '2024-01-18',
-          services: [
-            { id: 's4', name: 'Bridal Bouquet', price: 300, currency: 'USD' },
-            { id: 's5', name: 'Ceremony Arrangements', price: 800, currency: 'USD' },
-            { id: 's6', name: 'Reception Centerpieces', price: 1100, currency: 'USD' }
-          ]
-        }
-      ])
+      setVendors([])
     } finally {
       setLoading(false)
     }
@@ -208,13 +149,42 @@ export default function VendorsPage() {
   }
 
   if (error && vendors.length === 0) {
+    const isNoWeddingsError = error.includes('No weddings found')
+    
     return (
       <DashboardLayout>
-        <Alert status="error" borderRadius="md">
-          <AlertIcon />
-          <AlertTitle>Unable to load vendors!</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <VStack spacing={6} align="center" py={12}>
+          <Alert status={isNoWeddingsError ? "info" : "error"} maxW="md">
+            <AlertIcon />
+            <VStack spacing={2} align="start">
+              <AlertTitle>
+                {isNoWeddingsError ? "No Wedding Found" : "Unable to load vendors!"}
+              </AlertTitle>
+              <AlertDescription>
+                {isNoWeddingsError 
+                  ? "Please create a wedding first to manage vendors."
+                  : error
+                }
+              </AlertDescription>
+            </VStack>
+          </Alert>
+          
+          {isNoWeddingsError ? (
+            <Button 
+              as="a" 
+              href="/wedding/create" 
+              colorScheme="brand" 
+              size="lg"
+              leftIcon={<Plus />}
+            >
+              Create Your Wedding
+            </Button>
+          ) : (
+            <Button onClick={loadVendorsData} colorScheme="brand">
+              Retry
+            </Button>
+          )}
+        </VStack>
       </DashboardLayout>
     )
   }

@@ -53,7 +53,7 @@ export default function DashboardPage() {
       setLoading(true)
       setError(null)
       
-      console.log('Loading dashboard data...')
+
       
       // getCurrentUser() is called inside getDashboardData()
       try {
@@ -62,37 +62,14 @@ export default function DashboardPage() {
       } catch (dataError) {
         console.error('Failed to fetch dashboard data:', dataError)
         
-        // Fallback to mock data for development
-        setDashboardData({
-          wedding: {
-            id: 'mock-wedding-id',
-            coupleNames: ['Emma', 'James'],
-            weddingDate: '2024-06-15',
-            status: 'PLANNING'
-          },
-          stats: {
-            daysUntilWedding: 127,
-            totalVendors: 15,
-            confirmedVendors: 8,
-            totalGuests: 150,
-            rsvpReceived: 95,
-            budgetUsed: 68,
-            tasksCompleted: 23,
-            totalTasks: 45
-          },
-          recentActivity: [
-            { id: '1', type: 'vendor', title: 'Photographer confirmed', description: 'John Smith Photography accepted the contract', timestamp: '2 hours ago', priority: 'high' },
-            { id: '2', type: 'guest', title: 'RSVP received', description: '5 new RSVPs from the Johnson family', timestamp: '4 hours ago' },
-            { id: '3', type: 'task', title: 'Venue walkthrough completed', description: 'Final venue details confirmed with coordinator', timestamp: '1 day ago' },
-            { id: '4', type: 'budget', title: 'Catering payment processed', description: '$3,500 payment to Elegant Catering', timestamp: '2 days ago' }
-          ],
-          upcomingTasks: [
-            { id: '1', title: 'Final headcount to caterer', dueDate: '2024-02-15', priority: 'high', phase: 'Ceremony' },
-            { id: '2', title: 'Confirm transportation', dueDate: '2024-02-18', priority: 'medium', phase: 'Reception' },
-            { id: '3', title: 'Send rehearsal dinner invites', dueDate: '2024-02-20', priority: 'medium', phase: 'Pre-wedding' },
-            { id: '4', title: 'Pick up wedding rings', dueDate: '2024-02-22', priority: 'high', phase: 'Ceremony' }
-          ]
-        })
+        // Check if user has no weddings and needs to create one
+        if (dataError instanceof Error && dataError.message.includes('No weddings found')) {
+          setError('No weddings found. Create your first wedding to get started!')
+          return
+        }
+        
+        // Re-throw the error to be handled properly
+        throw dataError
       }
     } catch (err) {
       console.error('Failed to load dashboard data:', err)
@@ -114,16 +91,41 @@ export default function DashboardPage() {
   }
 
   if (error) {
+    const isNoWeddingsError = error.includes('No weddings found')
+    
     return (
       <DashboardLayout title="Wedding Overview">
-        <VStack spacing={4}>
-          <Alert status="error">
+        <VStack spacing={6} align="center" py={12}>
+          <Alert status={isNoWeddingsError ? "info" : "error"} maxW="md">
             <AlertIcon />
-            {error}
+            <Box>
+              <AlertTitle>
+                {isNoWeddingsError ? "Welcome to Enchanted Day!" : "Error"}
+              </AlertTitle>
+              <AlertDescription>
+                {isNoWeddingsError 
+                  ? "Let's create your first wedding to get started planning your special day."
+                  : error
+                }
+              </AlertDescription>
+            </Box>
           </Alert>
-          <Button onClick={loadDashboardData} colorScheme="brand">
-            Retry
-          </Button>
+          
+          {isNoWeddingsError ? (
+            <Button 
+              as="a" 
+              href="/wedding/create" 
+              colorScheme="brand" 
+              size="lg"
+              leftIcon={<Plus />}
+            >
+              Create Your Wedding
+            </Button>
+          ) : (
+            <Button onClick={loadDashboardData} colorScheme="brand">
+              Retry
+            </Button>
+          )}
         </VStack>
       </DashboardLayout>
     )

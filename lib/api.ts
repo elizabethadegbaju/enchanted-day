@@ -182,8 +182,7 @@ class ApiClient {
   }
 
   async getWeddingDashboard(id: string): Promise<Record<string, unknown>> {
-    console.log('Fetching dashboard for wedding ID:', id);
-    console.log('API URL:', `${this.baseURL}/weddings/${id}/dashboard`);
+
     
     const response = await this.request<Record<string, unknown>>(`/weddings/${id}/dashboard`);
     

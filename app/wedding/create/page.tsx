@@ -21,6 +21,7 @@ import { WeddingPhaseSetup } from '@/components/wedding/WeddingPhaseSetup'
 import { WeddingBudgetSetup } from '@/components/wedding/WeddingBudgetSetup'
 import { WeddingPreferences } from '@/components/wedding/WeddingPreferences'
 import { WeddingReview } from '@/components/wedding/WeddingReview'
+import { createUserWedding } from '@/lib/wedding-data-service'
 import type { UIWeddingPhase, UIBudgetInfo, UIWeddingPreferences } from '@/types'
 
 interface LocalWeddingFormData {
@@ -83,11 +84,25 @@ export default function CreateWeddingPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
-      // TODO: Implement API call to create wedding
-      console.log('Creating wedding with data:', formData)
+      // Extract primary date from phases (first phase or first with a date)
+      let primaryDate: string | undefined
+      if (formData.phases.length > 0) {
+        const phaseWithDate = formData.phases.find(phase => phase.date)
+        if (phaseWithDate?.date) {
+          primaryDate = typeof phaseWithDate.date === 'string' 
+            ? phaseWithDate.date 
+            : phaseWithDate.date.toISOString().split('T')[0]
+        }
+      }
+
+      // Create the wedding using real API
+      const weddingId = await createUserWedding({
+        coupleNames: formData.coupleNames.filter(name => name.trim() !== ''),
+        weddingType: formData.weddingType === 'single-event' ? 'SINGLE_EVENT' : 'MULTI_PHASE',
+        primaryDate
+      })
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+
       
       toast({
         title: 'Wedding Created!',
@@ -99,6 +114,7 @@ export default function CreateWeddingPage() {
       
       router.push('/dashboard')
     } catch (error) {
+      console.error('Error creating wedding:', error)
       toast({
         title: 'Error',
         description: 'Failed to create wedding. Please try again.',

@@ -67,140 +67,7 @@ export default function BudgetPage() {
     } catch (err) {
       console.error('Error loading budget data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load budget data')
-      
-      // Fallback to mock data for development
-      setBudgetData({
-        overallBudget: {
-          total: 50000,
-          allocated: 48000,
-          spent: 32500,
-          remaining: 17500,
-          currency: 'USD',
-          categories: [
-            { name: 'Venue', allocated: 15000, spent: 12000, percentage: 30 },
-            { name: 'Catering', allocated: 12000, spent: 8500, percentage: 25 },
-            { name: 'Photography', allocated: 5000, spent: 3500, percentage: 10 },
-            { name: 'Florals', allocated: 4000, spent: 2800, percentage: 8 },
-            { name: 'Music/DJ', allocated: 3000, spent: 1500, percentage: 6 }
-          ]
-        },
-        categories: [
-          {
-            id: '1',
-            name: 'Venue',
-            allocated: 15000,
-            spent: 12000,
-            remaining: 3000,
-            percentage: 80,
-            status: 'ON_TRACK',
-            vendorIds: ['venue-1'],
-            phaseIds: ['ceremony', 'reception']
-          },
-          {
-            id: '2',
-            name: 'Catering',
-            allocated: 12000,
-            spent: 8500,
-            remaining: 3500,
-            percentage: 71,
-            status: 'ON_TRACK',
-            vendorIds: ['caterer-1'],
-            phaseIds: ['reception']
-          },
-          {
-            id: '3',
-            name: 'Photography',
-            allocated: 5000,
-            spent: 3500,
-            remaining: 1500,
-            percentage: 70,
-            status: 'ON_TRACK',
-            vendorIds: ['photographer-1'],
-            phaseIds: ['ceremony', 'reception']
-          },
-          {
-            id: '4',
-            name: 'Florals',
-            allocated: 4000,
-            spent: 2800,
-            remaining: 1200,
-            percentage: 70,
-            status: 'ON_TRACK',
-            vendorIds: ['florist-1'],
-            phaseIds: ['ceremony', 'reception']
-          },
-          {
-            id: '5',
-            name: 'Music/DJ',
-            allocated: 3000,
-            spent: 1500,
-            remaining: 1500,
-            percentage: 50,
-            status: 'UNDER_BUDGET',
-            vendorIds: ['dj-1'],
-            phaseIds: ['reception']
-          },
-          {
-            id: '6',
-            name: 'Transportation',
-            allocated: 2000,
-            spent: 2200,
-            remaining: -200,
-            percentage: 110,
-            status: 'OVER_BUDGET',
-            vendorIds: ['transport-1'],
-            phaseIds: ['ceremony', 'reception']
-          }
-        ],
-        transactions: [
-          {
-            id: '1',
-            date: '2024-01-28',
-            description: 'Venue deposit payment',
-            amount: -5000,
-            type: 'PAYMENT',
-            categoryId: '1',
-            vendorName: 'Grand Ballroom',
-            phaseId: 'reception'
-          },
-          {
-            id: '2',
-            date: '2024-01-25',
-            description: 'Photography contract signing',
-            amount: -1500,
-            type: 'PAYMENT',
-            categoryId: '3',
-            vendorName: 'Elegant Photography'
-          },
-          {
-            id: '3',
-            date: '2024-01-20',
-            description: 'Catering deposit',
-            amount: -3000,
-            type: 'PAYMENT',
-            categoryId: '2',
-            vendorName: 'Gourmet Catering Co.'
-          },
-          {
-            id: '4',
-            date: '2024-01-15',
-            description: 'Floral arrangement deposit',
-            amount: -800,
-            type: 'PAYMENT',
-            categoryId: '4',
-            vendorName: 'Blooming Gardens'
-          },
-          {
-            id: '5',
-            date: '2024-01-12',
-            description: 'Transportation booking',
-            amount: -1200,
-            type: 'PAYMENT',
-            categoryId: '6',
-            vendorName: 'Luxury Limos'
-          }
-        ]
-      })
+      setBudgetData(null)
     } finally {
       setLoading(false)
     }
@@ -245,13 +112,42 @@ export default function BudgetPage() {
   }
 
   if (error && !budgetData) {
+    const isNoWeddingsError = error.includes('No weddings found')
+    
     return (
       <DashboardLayout>
-        <Alert status="error" borderRadius="md">
-          <AlertIcon />
-          <AlertTitle>Unable to load budget!</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <VStack spacing={6} align="center" py={12}>
+          <Alert status={isNoWeddingsError ? "info" : "error"} maxW="md">
+            <AlertIcon />
+            <VStack spacing={2} align="start">
+              <AlertTitle>
+                {isNoWeddingsError ? "No Wedding Found" : "Unable to load budget!"}
+              </AlertTitle>
+              <AlertDescription>
+                {isNoWeddingsError 
+                  ? "Please create a wedding first to manage your budget."
+                  : error
+                }
+              </AlertDescription>
+            </VStack>
+          </Alert>
+          
+          {isNoWeddingsError ? (
+            <Button 
+              as="a" 
+              href="/wedding/create" 
+              colorScheme="brand" 
+              size="lg"
+              leftIcon={<Plus />}
+            >
+              Create Your Wedding
+            </Button>
+          ) : (
+            <Button onClick={loadBudgetData} colorScheme="brand">
+              Retry
+            </Button>
+          )}
+        </VStack>
       </DashboardLayout>
     )
   }

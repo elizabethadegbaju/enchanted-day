@@ -104,77 +104,7 @@ export default function GuestsPage() {
     } catch (err) {
       console.error('Error loading guests data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load guests data')
-      
-      // Fallback to mock data for development
-      setGuests([
-        {
-          id: '1',
-          name: 'Sarah Johnson',
-          email: 'sarah.johnson@email.com',
-          phone: '+1 (555) 123-4567',
-          rsvpStatus: 'CONFIRMED',
-          relationship: 'Friend',
-          side: 'BRIDE',
-          inviteGroup: 'College Friends',
-          tableAssignment: 'Table 3',
-          dietaryRestrictions: ['Vegetarian'],
-          plusOne: {
-            name: 'Mike Johnson',
-            rsvpStatus: 'CONFIRMED'
-          },
-          phaseAttendance: [
-            { phaseId: 'ceremony', status: 'ATTENDING' },
-            { phaseId: 'reception', status: 'ATTENDING' }
-          ]
-        },
-        {
-          id: '2',
-          name: 'Robert Williams',
-          email: 'robert.w@email.com',
-          phone: '+1 (555) 987-6543',
-          rsvpStatus: 'PENDING',
-          relationship: 'Family',
-          side: 'GROOM',
-          inviteGroup: 'Immediate Family',
-          dietaryRestrictions: ['Gluten Free'],
-          phaseAttendance: [
-            { phaseId: 'ceremony', status: 'ATTENDING' },
-            { phaseId: 'reception', status: 'ATTENDING' }
-          ]
-        },
-        {
-          id: '3',
-          name: 'Lisa Brown',
-          email: 'lisa.brown@email.com',
-          rsvpStatus: 'DECLINED',
-          relationship: 'Colleague',
-          side: 'BRIDE',
-          inviteGroup: 'Work Friends',
-          phaseAttendance: [
-            { phaseId: 'ceremony', status: 'NOT_ATTENDING' },
-            { phaseId: 'reception', status: 'NOT_ATTENDING' }
-          ]
-        },
-        {
-          id: '4',
-          name: 'David Miller',
-          email: 'david.miller@email.com',
-          phone: '+1 (555) 456-7890',
-          rsvpStatus: 'CONFIRMED',
-          relationship: 'Friend',
-          side: 'GROOM',
-          inviteGroup: 'Childhood Friends',
-          tableAssignment: 'Table 5',
-          plusOne: {
-            name: 'Jennifer Miller',
-            rsvpStatus: 'CONFIRMED'
-          },
-          phaseAttendance: [
-            { phaseId: 'ceremony', status: 'ATTENDING' },
-            { phaseId: 'reception', status: 'ATTENDING' }
-          ]
-        }
-      ])
+      setGuests([])
     } finally {
       setLoading(false)
     }
@@ -241,13 +171,42 @@ export default function GuestsPage() {
   }
 
   if (error && guests.length === 0) {
+    const isNoWeddingsError = error.includes('No weddings found')
+    
     return (
       <DashboardLayout>
-        <Alert status="error" borderRadius="md">
-          <AlertIcon />
-          <AlertTitle>Unable to load guests!</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <VStack spacing={6} align="center" py={12}>
+          <Alert status={isNoWeddingsError ? "info" : "error"} maxW="md">
+            <AlertIcon />
+            <VStack spacing={2} align="start">
+              <AlertTitle>
+                {isNoWeddingsError ? "No Wedding Found" : "Unable to load guests!"}
+              </AlertTitle>
+              <AlertDescription>
+                {isNoWeddingsError 
+                  ? "Please create a wedding first to manage your guest list."
+                  : error
+                }
+              </AlertDescription>
+            </VStack>
+          </Alert>
+          
+          {isNoWeddingsError ? (
+            <Button 
+              as="a" 
+              href="/wedding/create" 
+              colorScheme="brand" 
+              size="lg"
+              leftIcon={<Plus />}
+            >
+              Create Your Wedding
+            </Button>
+          ) : (
+            <Button onClick={loadGuestsData} colorScheme="brand">
+              Retry
+            </Button>
+          )}
+        </VStack>
       </DashboardLayout>
     )
   }
@@ -346,8 +305,8 @@ export default function GuestsPage() {
                 value={sideFilter}
                 onChange={(e) => setSideFilter(e.target.value)}
               >
-                <option value="BRIDE">Bride's Side</option>
-                <option value="GROOM">Groom's Side</option>
+                <option value="BRIDE">Bride&apos;s Side</option>
+                <option value="GROOM">Groom&apos;s Side</option>
               </Select>
               
               <Select
@@ -447,7 +406,7 @@ export default function GuestsPage() {
                     <Td>
                       <VStack align="start" spacing={1}>
                         <Text fontSize="sm" fontWeight="semibold">
-                          {guest.side === 'BRIDE' ? "Bride's Side" : "Groom's Side"}
+                          {guest.side === 'BRIDE' ? "Bride&apos;s Side" : "Groom&apos;s Side"}
                         </Text>
                         {guest.inviteGroup && (
                           <Text fontSize="sm" color="gray.500">
