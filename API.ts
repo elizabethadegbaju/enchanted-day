@@ -133,8 +133,10 @@ export type Transaction = {
 };
 
 export enum TransactionType {
-  EXPENSE = "EXPENSE",
-  INCOME = "INCOME",
+  ADDITIONAL = "ADDITIONAL",
+  DEPOSIT = "DEPOSIT",
+  FINAL = "FINAL",
+  PARTIAL = "PARTIAL",
 }
 
 
@@ -674,6 +676,7 @@ export type VendorService = {
 export enum VendorStatus {
   COMPLETED = "COMPLETED",
   CONFIRMED = "CONFIRMED",
+  INQUIRED = "INQUIRED",
   ISSUE = "ISSUE",
   PENDING = "PENDING",
 }
