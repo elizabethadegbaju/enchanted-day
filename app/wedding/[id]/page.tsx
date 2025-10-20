@@ -28,15 +28,23 @@ import {
   Alert,
   AlertIcon,
   AlertTitle,
-  AlertDescription
+  AlertDescription,
+  useToast,
+  useDisclosure,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  IconButton,
 } from '@chakra-ui/react'
 import { useParams, useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal'
 import { WeddingOverview } from '@/components/wedding/WeddingOverview'
 import { WeddingTimeline } from '@/components/wedding/WeddingTimeline'
 import { WeddingPhases } from '@/components/wedding/WeddingPhases'
 import { WeddingBudgetTracker } from '@/components/wedding/WeddingBudgetTracker'
-import { getWeddingDetailData, type WeddingDetailData } from '@/lib/wedding-data-service'
+import { getWeddingDetailData, deleteWedding, type WeddingDetailData } from '@/lib/wedding-data-service'
 import { formatDateForDisplay, getDaysUntilDate, formatCurrency } from '@/lib/data-utils'
 import { 
   Calendar, 
@@ -45,18 +53,23 @@ import {
   Settings,
   Edit,
   Heart,
-  DollarSign
+  DollarSign,
+  MoreVertical,
+  Trash2
 } from 'lucide-react'
 
 export default function WeddingDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const toast = useToast()
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
   const weddingId = params.id as string
   
   const [wedding, setWedding] = useState<WeddingDetailData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState(0)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const cardBg = useColorModeValue('white', 'gray.700')
   const borderColor = useColorModeValue('gray.200', 'gray.600')
@@ -81,6 +94,36 @@ export default function WeddingDetailPage() {
       setWedding(null)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteWedding = async () => {
+    try {
+      setIsDeleting(true)
+      await deleteWedding(weddingId)
+      
+      toast({
+        title: 'Wedding Deleted',
+        description: 'The wedding and all associated data have been permanently deleted',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      })
+      
+      // Navigate back to dashboard
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('Error deleting wedding:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete wedding. Please try again.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      })
+    } finally {
+      setIsDeleting(false)
+      onDeleteClose()
     }
   }
 
@@ -193,6 +236,23 @@ export default function WeddingDetailPage() {
                 <Button leftIcon={<Settings size={16} />} colorScheme="purple">
                   Manage
                 </Button>
+                <Menu>
+                  <MenuButton
+                    as={IconButton}
+                    icon={<MoreVertical size={16} />}
+                    variant="outline"
+                    aria-label="More options"
+                  />
+                  <MenuList>
+                    <MenuItem 
+                      icon={<Trash2 size={16} />} 
+                      onClick={onDeleteOpen}
+                      color="red.600"
+                    >
+                      Delete Wedding
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
               </HStack>
             </HStack>
           </CardBody>
@@ -429,6 +489,36 @@ export default function WeddingDetailPage() {
           </TabPanels>
         </Tabs>
       </VStack>
+      
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteOpen}
+        onClose={onDeleteClose}
+        onConfirm={handleDeleteWedding}
+        isLoading={isDeleting}
+        title="Delete Wedding"
+        itemName={wedding ? wedding.coupleNames.join(' & ') + ' Wedding' : 'this wedding'}
+        itemType="Wedding"
+        customWarning={
+          <VStack align="start" spacing={2}>
+            <Text fontWeight="bold" color="red.600">
+              ⚠️ This action cannot be undone!
+            </Text>
+            <Text>
+              This will permanently delete the entire wedding and ALL associated data including:
+            </Text>
+            <Box as="ul" pl={4}>
+              <li>All wedding phases and venues</li>
+              <li>All guests and RSVP information</li>
+              <li>All vendors and contracts</li>
+              <li>All mood boards and media</li>
+              <li>Budget and payment information</li>
+              <li>Timeline and task information</li>
+              <li>All communication history</li>
+            </Box>
+          </VStack>
+        }
+      />
     </DashboardLayout>
   )
 }

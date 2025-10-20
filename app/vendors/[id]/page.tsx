@@ -25,8 +25,19 @@ import {
   Td,
   Avatar,
   Link as ChakraLink,
+  useToast,
+  useDisclosure,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  IconButton,
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal'
+import { deleteVendor } from '@/lib/wedding-data-service'
+import { useParams, useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { 
   Phone,
   Mail,
@@ -38,7 +49,9 @@ import {
   Clock,
   MessageSquare,
   Edit,
-  ExternalLink
+  ExternalLink,
+  MoreVertical,
+  Trash2
 } from 'lucide-react'
 
 // Mock data - will be replaced with real API calls
@@ -162,10 +175,46 @@ const priorityColors: Record<string, string> = {
 }
 
 export default function VendorDetailPage() {
+  const params = useParams()
+  const router = useRouter()
+  const toast = useToast()
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
+  const [isDeleting, setIsDeleting] = useState(false)
+  
   // In a real app, fetch vendor data based on useParams().id
   const vendor = mockVendorDetails
   const StatusIcon = statusIcons[vendor.status]
   const budgetPercentage = (vendor.budget.spent / vendor.budget.allocated) * 100
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true)
+      await deleteVendor(params.id as string)
+      
+      toast({
+        title: 'Vendor Deleted',
+        description: `${vendor.name} has been removed from the wedding`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      })
+      
+      // Navigate back to vendors list
+      router.push('/vendors')
+    } catch (error) {
+      console.error('Error deleting vendor:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete vendor. Please try again.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      })
+    } finally {
+      setIsDeleting(false)
+      onDeleteClose()
+    }
+  }
   
 
 
@@ -244,6 +293,23 @@ export default function VendorDetailPage() {
                 <Button leftIcon={<MessageSquare size={16} />} colorScheme="brand">
                   Send Message
                 </Button>
+                <Menu>
+                  <MenuButton
+                    as={IconButton}
+                    icon={<MoreVertical size={16} />}
+                    variant="outline"
+                    aria-label="More options"
+                  />
+                  <MenuList>
+                    <MenuItem 
+                      icon={<Trash2 size={16} />} 
+                      onClick={onDeleteOpen}
+                      color="red.600"
+                    >
+                      Delete Vendor
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
               </VStack>
             </HStack>
           </CardBody>
@@ -471,6 +537,18 @@ export default function VendorDetailPage() {
           </CardBody>
         </Card>
       </VStack>
+      
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteOpen}
+        onClose={onDeleteClose}
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+        title="Delete Vendor"
+        itemName={vendor.name}
+        itemType="Vendor"
+        warningMessage="This will permanently remove this vendor from your wedding, including all contracts, communications, and payment schedules."
+      />
     </DashboardLayout>
   )
 }

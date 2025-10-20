@@ -67,14 +67,15 @@ export const WeddingBudgetSetup: React.FC<WeddingBudgetSetupProps> = ({
   const selectedCurrency = CURRENCY_OPTIONS.find(c => c.code === budget.currency) || CURRENCY_OPTIONS[0]
 
   const handleBudgetUpdate = (updates: any) => {
-    updateBudget(updates)
-    onUpdate?.({ ...budget, ...updates })
+    const updatedBudget = { ...budget, ...updates }
+    updateBudget(updatedBudget)
+    onUpdate?.(updatedBudget)
   }
 
   const updateCategory = (index: number, updates: any) => {
     const categories = [...((budget as any).categories || [])]
     categories[index] = { ...categories[index], ...updates }
-    updateBudget({ categories })
+    handleBudgetUpdate({ categories })
   }
 
   const addCategory = () => {
@@ -95,13 +96,13 @@ export const WeddingBudgetSetup: React.FC<WeddingBudgetSetupProps> = ({
       allocated: 0,
       spent: 0,
     }
-    updateBudget({ categories: [...categories, newCategory] })
+    handleBudgetUpdate({ categories: [...categories, newCategory] })
   }
 
   const removeCategory = (index: number) => {
     const categories = budget.categories || []
     if (categories.length > 1) {
-      updateBudget({ categories: categories.filter((_: any, i: number) => i !== index) })
+      handleBudgetUpdate({ categories: categories.filter((_: any, i: number) => i !== index) })
     }
   }
 
@@ -113,10 +114,14 @@ export const WeddingBudgetSetup: React.FC<WeddingBudgetSetupProps> = ({
       spent: 0,
     }))
     
-    updateBudget({ 
+    // Only update categories, preserve other budget properties
+    const updatedBudget = {
+      ...budget,
       categories,
-      allocated: total,
-    })
+    }
+    
+    updateBudget(updatedBudget)
+    onUpdate?.(updatedBudget)
     setUseDefaultCategories(false)
   }
 
@@ -150,7 +155,7 @@ export const WeddingBudgetSetup: React.FC<WeddingBudgetSetupProps> = ({
                 <NumberInput
                   min={0}
                   value={budget.total || 0}
-                  onChange={(_, value) => updateBudget({ total: value || 0 })}
+                  onChange={(_, value) => handleBudgetUpdate({ total: value || 0 })}
                 >
                   <NumberInputField />
                   <NumberInputStepper>
@@ -164,7 +169,7 @@ export const WeddingBudgetSetup: React.FC<WeddingBudgetSetupProps> = ({
                 <FormLabel fontSize="sm">Currency</FormLabel>
                 <Select
                   value={budget.currency || 'USD'}
-                  onChange={(e) => updateBudget({ currency: e.target.value })}
+                  onChange={(e) => handleBudgetUpdate({ currency: e.target.value })}
                 >
                   {CURRENCY_OPTIONS.map((currency) => (
                     <option key={currency.code} value={currency.code}>

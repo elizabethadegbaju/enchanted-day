@@ -1084,3 +1084,153 @@ export async function createActivity(activityData: {
     // Don't throw here as activity logging is not critical for main functionality
   }
 }
+
+// ============================================================================
+// DELETE OPERATIONS
+// ============================================================================
+
+// Delete a guest
+export async function deleteGuest(guestId: string): Promise<void> {
+  try {
+    const { data: guest } = await client.models.Guest.get({ id: guestId });
+    if (!guest) {
+      throw new Error('Guest not found');
+    }
+
+    // Delete associated plus one if exists
+    if (guest.plus_one_id) {
+      await client.models.PlusOne.delete({ id: guest.plus_one_id });
+    }
+
+    // Delete guest
+    await client.models.Guest.delete({ id: guestId });
+
+    // Log activity
+    await createActivity({
+      weddingId: guest.wedding_id,
+      type: 'GUEST_DELETED',
+      title: 'Guest Removed',
+      description: `Guest ${guest.name} has been removed from the wedding`,
+      relatedEntityType: 'GUEST',
+      relatedEntityId: guestId,
+      priority: 'MEDIUM'
+    });
+  } catch (error) {
+    console.error('Error deleting guest:', error);
+    throw error;
+  }
+}
+
+// Delete a vendor
+export async function deleteVendor(vendorId: string): Promise<void> {
+  try {
+    const { data: vendor } = await client.models.Vendor.get({ id: vendorId });
+    if (!vendor) {
+      throw new Error('Vendor not found');
+    }
+
+    // Delete vendor
+    await client.models.Vendor.delete({ id: vendorId });
+
+    // Log activity
+    await createActivity({
+      weddingId: vendor.wedding_id,
+      type: 'VENDOR_DELETED',
+      title: 'Vendor Removed',
+      description: `Vendor ${vendor.name} has been removed from the wedding`,
+      relatedEntityType: 'VENDOR',
+      relatedEntityId: vendorId,
+      priority: 'MEDIUM'
+    });
+  } catch (error) {
+    console.error('Error deleting vendor:', error);
+    throw error;
+  }
+}
+
+// Delete a mood board
+export async function deleteMoodBoard(moodBoardId: string): Promise<void> {
+  try {
+    const { data: moodBoard } = await client.models.MoodBoard.get({ id: moodBoardId });
+    if (!moodBoard) {
+      throw new Error('Mood board not found');
+    }
+
+    // Delete mood board
+    await client.models.MoodBoard.delete({ id: moodBoardId });
+
+    // Log activity
+    await createActivity({
+      weddingId: moodBoard.wedding_id,
+      type: 'MOOD_BOARD_DELETED',
+      title: 'Mood Board Removed',
+      description: `Mood board "${moodBoard.name}" has been deleted`,
+      relatedEntityType: 'MOOD_BOARD',
+      relatedEntityId: moodBoardId,
+      priority: 'MEDIUM'
+    });
+  } catch (error) {
+    console.error('Error deleting mood board:', error);
+    throw error;
+  }
+}
+
+// Delete a wedding (with all associated data)
+export async function deleteWedding(weddingId: string): Promise<void> {
+  try {
+    const { data: wedding } = await client.models.Wedding.get({ id: weddingId });
+    if (!wedding) {
+      throw new Error('Wedding not found');
+    }
+
+    // Delete all associated data
+    // Note: In a real implementation, you might want to do this in a transaction
+    // or have cascade deletes configured in your database schema
+
+    // Delete guests
+    const { data: guests } = await client.models.Guest.list({
+      filter: { wedding_id: { eq: weddingId } }
+    });
+    if (guests) {
+      for (const guest of guests) {
+        await deleteGuest(guest.id);
+      }
+    }
+
+    // Delete vendors
+    const { data: vendors } = await client.models.Vendor.list({
+      filter: { wedding_id: { eq: weddingId } }
+    });
+    if (vendors) {
+      for (const vendor of vendors) {
+        await deleteVendor(vendor.id);
+      }
+    }
+
+    // Delete mood boards
+    const { data: moodBoards } = await client.models.MoodBoard.list({
+      filter: { wedding_id: { eq: weddingId } }
+    });
+    if (moodBoards) {
+      for (const moodBoard of moodBoards) {
+        await deleteMoodBoard(moodBoard.id);
+      }
+    }
+
+    // Delete phases
+    const { data: phases } = await client.models.WeddingPhase.list({
+      filter: { wedding_id: { eq: weddingId } }
+    });
+    if (phases) {
+      for (const phase of phases) {
+        await client.models.WeddingPhase.delete({ id: phase.id });
+      }
+    }
+
+    // Finally, delete the wedding
+    await client.models.Wedding.delete({ id: weddingId });
+  } catch (error) {
+    console.error('Error deleting wedding:', error);
+    throw error;
+  }
+}

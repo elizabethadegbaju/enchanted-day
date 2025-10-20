@@ -18,8 +18,19 @@ import {
   TabPanel,
   Avatar,
   Link as ChakraLink,
+  useToast,
+  useDisclosure,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  IconButton,
 } from '@chakra-ui/react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal'
+import { deleteGuest } from '@/lib/wedding-data-service'
+import { useParams, useRouter } from 'next/navigation'
+import { useState } from 'react'
 import {
   Phone,
   Mail,
@@ -31,7 +42,9 @@ import {
   Edit,
   X,
   MapPin,
-  Car
+  Car,
+  MoreVertical,
+  Trash2
 } from 'lucide-react'
 
 
@@ -130,9 +143,45 @@ const phaseStatusColors: Record<string, string> = {
 }
 
 export default function GuestDetailPage() {
+  const params = useParams()
+  const router = useRouter()
+  const toast = useToast()
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
+  const [isDeleting, setIsDeleting] = useState(false)
+  
   // In a real app, fetch guest data based on useParams().id
   const guest = mockGuestDetails
   const StatusIcon = rsvpStatusIcons[guest.rsvpStatus]
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true)
+      await deleteGuest(params.id as string)
+      
+      toast({
+        title: 'Guest Deleted',
+        description: `${guest.name} has been removed from the wedding`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      })
+      
+      // Navigate back to guests list
+      router.push('/guests')
+    } catch (error) {
+      console.error('Error deleting guest:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete guest. Please try again.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      })
+    } finally {
+      setIsDeleting(false)
+      onDeleteClose()
+    }
+  }
 
 
 
@@ -203,6 +252,23 @@ export default function GuestDetailPage() {
                 <Button leftIcon={<MessageSquare size={16} />} colorScheme="brand">
                   Send Message
                 </Button>
+                <Menu>
+                  <MenuButton
+                    as={IconButton}
+                    icon={<MoreVertical size={16} />}
+                    variant="outline"
+                    aria-label="More options"
+                  />
+                  <MenuList>
+                    <MenuItem 
+                      icon={<Trash2 size={16} />} 
+                      onClick={onDeleteOpen}
+                      color="red.600"
+                    >
+                      Delete Guest
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
               </VStack>
             </HStack>
           </CardBody>
@@ -508,6 +574,18 @@ export default function GuestDetailPage() {
           </CardBody>
         </Card>
       </VStack>
+      
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteOpen}
+        onClose={onDeleteClose}
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+        title="Delete Guest"
+        itemName={guest.name}
+        itemType="Guest"
+        warningMessage="This will permanently remove this guest from your wedding, including their RSVP status, meal preferences, and all communication history."
+      />
     </DashboardLayout>
   )
 }

@@ -66,7 +66,17 @@ export default function CreateWeddingPage() {
   const toast = useToast()
 
   const updateFormData = (updates: Partial<LocalWeddingFormData>) => {
-    setFormData((prev: LocalWeddingFormData) => ({ ...prev, ...updates }))
+    setFormData((prev: LocalWeddingFormData) => {
+      // Deep merge for nested objects like budget
+      const merged = { ...prev, ...updates }
+      
+      // Special handling for budget to preserve all properties
+      if (updates.overallBudget) {
+        merged.overallBudget = { ...prev.overallBudget, ...updates.overallBudget }
+      }
+      
+      return merged
+    })
   }
 
   const nextStep = () => {

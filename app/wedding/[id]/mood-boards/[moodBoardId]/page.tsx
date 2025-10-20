@@ -1,313 +1,433 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react';
 import {
+  Box,
+  Container,
+  Heading,
   VStack,
   HStack,
   Text,
   Button,
-  Card,
-  CardBody,
   Badge,
+  SimpleGrid,
+  Image,
+  Link,
+  Flex,
+  useToast,
+  Spinner,
+  Alert,
+  AlertIcon,
+  AlertTitle,
   Tabs,
   TabList,
   TabPanels,
   Tab,
   TabPanel,
+  IconButton,
+  Divider,
   useDisclosure,
-  useColorModeValue,
-} from '@chakra-ui/react'
-import { useParams, useRouter } from 'next/navigation'
-import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { MediaUploadZone } from '@/components/wedding/MediaUploadZone'
-import { ColorPaletteManager } from '@/components/wedding/ColorPaletteManager'
-import { StyleKeywordManager } from '@/components/wedding/StyleKeywordManager'
-import { InspirationLinkManager } from '@/components/wedding/InspirationLinkManager'
-import { MediaGallery } from '@/components/wedding/MediaGallery'
-import { ArrowLeft, Edit, Share, Download, Plus } from 'lucide-react'
-import type { MoodBoard, InspirationLink, MediaAsset, ColorPalette } from '@/types'
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+} from '@chakra-ui/react';
+import { useRouter } from 'next/navigation';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal';
+import { getMoodBoardDetail, deleteMoodBoard } from '@/lib/wedding-data-service';
+import type { UIMoodBoard } from '@/types';
+import { MoreVertical, Trash2 } from 'lucide-react';
 
-// Define local interface that matches component expectations
-interface LocalMoodBoard {
-  id: string;
-  name: string;
-  description?: string;
-  images: LocalMediaAsset[];
-  videos: LocalMediaAsset[];
-  links: LocalInspirationLink[];
-  colorPalette: LocalColorPalette;
-  styleKeywords: string[];
-  phase_id?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface LocalMediaAsset {
-  id: string;
-  type: 'IMAGE' | 'VIDEO';
-  url: string;
-  s3_key: string;
-  filename: string;
-  tags?: string[];
-  uploaded_at: string;
-  metadata: any;
-}
-
-interface LocalInspirationLink {
-  id: string;
-  url: string;
-  title: string;
-  description: string;
-  source: string;
-  tags?: string[];
-  added_at: string;
-}
-
-interface LocalColorPalette {
-  primary: string[];
-  secondary: string[];
-  accent: string[];
-  neutral: string[];
-}
-
-export default function MoodBoardDetailPage() {
-  const params = useParams()
-  const router = useRouter()
-  const weddingId = params.id as string
-  const moodBoardId = params.moodBoardId as string
+export default function MoodBoardDetailPage({
+  params,
+}: {
+  params: { id: string; moodBoardId: string };
+}) {
+  const router = useRouter();
+  const toast = useToast();
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   
-  const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure()
-  
-  // Mock data - will be replaced with real API calls
-  const [moodBoard, setMoodBoard] = useState<LocalMoodBoard>({
-    id: moodBoardId,
-    name: 'Overall Wedding Vision',
-    description: 'Main inspiration and color palette for the entire wedding',
-    images: [
-      {
-        id: '1',
-        type: 'IMAGE',
-        url: '/api/placeholder/400/300',
-        s3_key: 'wedding-1/mood-1.jpg',
-        filename: 'inspiration-1.jpg',
-        tags: ['romantic', 'elegant', 'flowers'],
-        uploaded_at: '2024-01-15T00:00:00.000Z',
-        metadata: { size: 1024000, format: 'jpg', dimensions: { width: 400, height: 300 } }
-      },
-      {
-        id: '2',
-        type: 'IMAGE',
-        url: '/api/placeholder/400/300',
-        s3_key: 'wedding-1/mood-2.jpg',
-        filename: 'inspiration-2.jpg',
-        tags: ['decor', 'table-setting'],
-        uploaded_at: '2024-01-16T00:00:00.000Z',
-        metadata: { size: 1024000, format: 'jpg', dimensions: { width: 400, height: 300 } }
+  const [moodBoard, setMoodBoard] = useState<UIMoodBoard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    async function fetchMoodBoard() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getMoodBoardDetail(params.moodBoardId);
+        setMoodBoard(data);
+      } catch (err) {
+        console.error('Error fetching mood board:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load mood board');
+        toast({
+          title: 'Error',
+          description: 'Failed to load mood board details',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setLoading(false);
       }
-    ],
-    videos: [],
-    links: [
-      {
-        id: '1',
-        url: 'https://pinterest.com/pin/123',
-        title: 'Elegant Garden Wedding',
-        description: 'Beautiful outdoor ceremony setup with romantic lighting',
-        source: 'Pinterest',
-        tags: ['garden', 'outdoor', 'ceremony'],
-        added_at: '2024-01-17T00:00:00.000Z'
-      }
-    ],
-    colorPalette: {
-      primary: ['#E8B4B8', '#F4D1D1'],
-      secondary: ['#A8C8A8', '#D4E8D4'],
-      accent: ['#F5E6D3', '#E8D5B7'],
-      neutral: ['#F8F8F8', '#E5E5E5']
-    },
-    styleKeywords: ['romantic', 'elegant', 'garden', 'vintage', 'soft', 'natural'],
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-20')
-  })
+    }
 
-  const cardBg = useColorModeValue('white', 'gray.800')
+    fetchMoodBoard();
+  }, [params.moodBoardId, toast]);
 
-  const handleMediaUpload = (files: File[]) => {
+  const handleEdit = () => {
+    // TODO: Implement edit functionality
+    toast({
+      title: 'Edit Mode',
+      description: 'Edit functionality coming soon!',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    });
+  };
 
-    // TODO: Implement file upload logic
-    onUploadClose()
+  const handleShare = () => {
+    // TODO: Implement share functionality
+    navigator.clipboard.writeText(window.location.href);
+    toast({
+      title: 'Link Copied',
+      description: 'Mood board link copied to clipboard',
+      status: 'success',
+      duration: 3000,
+      isClosable: true,
+    });
+  };
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true)
+      await deleteMoodBoard(params.moodBoardId)
+      
+      toast({
+        title: 'Mood Board Deleted',
+        description: `"${moodBoard?.name}" has been deleted`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      })
+      
+      // Navigate back to mood boards list
+      router.push(`/wedding/${params.id}/mood-boards`)
+    } catch (error) {
+      console.error('Error deleting mood board:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete mood board. Please try again.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      })
+    } finally {
+      setIsDeleting(false)
+      onDeleteClose()
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <Container maxW="6xl" py={8}>
+          <Flex justify="center" align="center" minH="400px">
+            <VStack spacing={4}>
+              <Spinner size="xl" color="purple.500" />
+              <Text>Loading mood board...</Text>
+            </VStack>
+          </Flex>
+        </Container>
+      </DashboardLayout>
+    );
   }
 
-  const handleColorPaletteUpdate = (colorPalette: LocalColorPalette) => {
-    setMoodBoard((prev: LocalMoodBoard) => ({
-      ...prev,
-      colorPalette,
-      updatedAt: new Date()
-    }))
-  }
-
-  const handleStyleKeywordsUpdate = (styleKeywords: string[]) => {
-    setMoodBoard((prev: LocalMoodBoard) => ({
-      ...prev,
-      styleKeywords,
-      updatedAt: new Date()
-    }))
-  }
-
-  const handleInspirationLinksUpdate = (links: any[]) => {
-    const localLinks: LocalInspirationLink[] = links.map(link => ({
-      id: link.id,
-      url: link.url,
-      title: link.title,
-      description: link.description,
-      source: link.source,
-      tags: link.tags || [],
-      added_at: link.added_at || new Date().toISOString()
-    }))
-    
-    setMoodBoard((prev: LocalMoodBoard) => ({
-      ...prev,
-      links: localLinks,
-      updatedAt: new Date()
-    }))
-  }
-
-  const handleMediaDelete = (mediaId: string) => {
-    setMoodBoard((prev: LocalMoodBoard) => ({
-      ...prev,
-      images: prev.images.filter(img => img.id !== mediaId),
-      videos: prev.videos.filter(vid => vid.id !== mediaId),
-      updatedAt: new Date()
-    }))
+  if (error || !moodBoard) {
+    return (
+      <DashboardLayout>
+        <Container maxW="6xl" py={8}>
+          <Alert status="error">
+            <AlertIcon />
+            <VStack align="start" spacing={2}>
+              <AlertTitle>Error Loading Mood Board</AlertTitle>
+              <Text>{error || 'Mood board not found'}</Text>
+              <Button
+                size="sm"
+                onClick={() => router.push(`/wedding/${params.id}/mood-boards`)}
+              >
+                Back to Mood Boards
+              </Button>
+            </VStack>
+          </Alert>
+        </Container>
+      </DashboardLayout>
+    );
   }
 
   return (
-    <DashboardLayout
-      title={moodBoard.name}
-      breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Wedding Details', href: `/wedding/${weddingId}` },
-        { label: 'Mood Boards', href: `/wedding/${weddingId}/mood-boards` },
-        { label: moodBoard.name },
-      ]}
-    >
-      <VStack spacing={6} align="stretch">
-        {/* Header */}
-        <Card bg={cardBg}>
-          <CardBody>
-            <VStack spacing={4} align="stretch">
-              <HStack justify="space-between" align="start">
-                <VStack align="start" spacing={2}>
-                  <HStack spacing={3}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      leftIcon={<ArrowLeft size={16} />}
-                      onClick={() => router.back()}
-                    >
-                      Back
-                    </Button>
-                    <Text fontSize="2xl" fontWeight="bold">
-                      {moodBoard.name}
-                    </Text>
-                    {moodBoard.phase_id && (
-                      <Badge colorScheme="brand">Phase Specific</Badge>
-                    )}
-                  </HStack>
-                  
-                  {moodBoard.description && (
-                    <Text color="neutral.600" maxW="2xl">
-                      {moodBoard.description}
-                    </Text>
-                  )}
-                  
-                  <HStack spacing={4} fontSize="sm" color="neutral.500">
-                    <Text>
-                      {moodBoard.images.length + moodBoard.videos.length} media items
-                    </Text>
-                    <Text>•</Text>
-                    <Text>{moodBoard.links.length} inspiration links</Text>
-                    <Text>•</Text>
-                    <Text>Updated {moodBoard.updatedAt.toLocaleDateString()}</Text>
-                  </HStack>
-                </VStack>
-                
-                <HStack spacing={2}>
-                  <Button
-                    leftIcon={<Plus size={16} />}
-                    colorScheme="brand"
-                    onClick={onUploadOpen}
+    <DashboardLayout>
+      <Container maxW="6xl" py={8}>
+        <VStack spacing={8} align="stretch">
+          {/* Header */}
+          <HStack justify="space-between">
+            <HStack spacing={4}>
+              <Button
+                variant="ghost"
+                onClick={() => router.push(`/wedding/${params.id}/mood-boards`)}
+                aria-label="Back to mood boards"
+              >
+                ← Back
+              </Button>
+              <VStack align="start" spacing={1}>
+                <Heading size="lg">{moodBoard.name}</Heading>
+                <Text color="gray.600">{moodBoard.description}</Text>
+              </VStack>
+            </HStack>
+            
+            <HStack>
+              <Badge colorScheme={moodBoard.isFinalized ? 'green' : 'yellow'}>
+                {moodBoard.isFinalized ? 'Finalized' : 'Draft'}
+              </Badge>
+              <Badge colorScheme={moodBoard.isPublic ? 'blue' : 'gray'}>
+                {moodBoard.isPublic ? 'Public' : 'Private'}
+              </Badge>
+              <Button size="sm" onClick={handleShare}>
+                Share
+              </Button>
+              <Button size="sm" colorScheme="purple" onClick={handleEdit}>
+                Edit
+              </Button>
+              <Menu>
+                <MenuButton
+                  as={IconButton}
+                  icon={<MoreVertical size={16} />}
+                  variant="outline"
+                  size="sm"
+                  aria-label="More options"
+                />
+                <MenuList>
+                  <MenuItem 
+                    icon={<Trash2 size={16} />} 
+                    onClick={onDeleteOpen}
+                    color="red.600"
                   >
-                    Add Media
-                  </Button>
-                  <Button leftIcon={<Edit size={16} />} variant="outline">
-                    Edit Details
-                  </Button>
-                  <Button leftIcon={<Share size={16} />} variant="outline">
-                    Share
-                  </Button>
-                  <Button leftIcon={<Download size={16} />} variant="outline">
-                    Export
-                  </Button>
-                </HStack>
-              </HStack>
-            </VStack>
-          </CardBody>
-        </Card>
+                    Delete Mood Board
+                  </MenuItem>
+                </MenuList>
+              </Menu>
+            </HStack>
+          </HStack>
 
-        {/* Content Tabs */}
-        <Card bg={cardBg}>
-          <CardBody p={0}>
-            <Tabs variant="enclosed" colorScheme="brand">
-              <TabList>
-                <Tab>Media Gallery</Tab>
-                <Tab>Color Palette</Tab>
-                <Tab>Style Keywords</Tab>
-                <Tab>Inspiration Links</Tab>
-              </TabList>
+          {/* Style Keywords */}
+          {moodBoard.styleKeywords && moodBoard.styleKeywords.length > 0 && (
+            <Box>
+              <Text fontWeight="semibold" mb={3}>Style Keywords</Text>
+              <Flex wrap="wrap" gap={2}>
+                {moodBoard.styleKeywords.map((keyword, index) => (
+                  <Badge key={index} variant="subtle" colorScheme="purple">
+                    {keyword}
+                  </Badge>
+                ))}
+              </Flex>
+            </Box>
+          )}
 
-              <TabPanels>
-                <TabPanel>
-                  <MediaGallery
-                    images={moodBoard.images}
-                    videos={moodBoard.videos}
-                    onDelete={handleMediaDelete}
-                    onUpload={onUploadOpen}
-                  />
-                </TabPanel>
-                
-                <TabPanel>
-                  <ColorPaletteManager
-                    colorPalette={moodBoard.colorPalette}
-                    onChange={handleColorPaletteUpdate}
-                  />
-                </TabPanel>
-                
-                <TabPanel>
-                  <StyleKeywordManager
-                    keywords={moodBoard.styleKeywords}
-                    onChange={handleStyleKeywordsUpdate}
-                  />
-                </TabPanel>
-                
-                <TabPanel>
-                  <InspirationLinkManager
-                    links={moodBoard.links}
-                    onChange={handleInspirationLinksUpdate}
-                  />
-                </TabPanel>
-              </TabPanels>
-            </Tabs>
-          </CardBody>
-        </Card>
+          {/* Color Palette */}
+          {moodBoard.colorPalette && (
+            <Box>
+              <Text fontWeight="semibold" mb={3}>Color Palette</Text>
+              <VStack spacing={3} align="stretch">
+                {Object.entries(moodBoard.colorPalette).map(([category, colors]) => {
+                  if (!colors || colors.length === 0) return null;
+                  return (
+                    <HStack key={category} spacing={3}>
+                      <Text minW="80px" textTransform="capitalize" fontWeight="medium">
+                        {category}:
+                      </Text>
+                      <HStack spacing={2}>
+                        {colors.map((color, index) => (
+                          <Box
+                            key={index}
+                            w={8}
+                            h={8}
+                            borderRadius="md"
+                            bg={color}
+                            border="1px solid"
+                            borderColor="gray.200"
+                            title={color}
+                          />
+                        ))}
+                      </HStack>
+                    </HStack>
+                  );
+                })}
+              </VStack>
+            </Box>
+          )}
 
-        {/* Media Upload Modal */}
-        <MediaUploadZone
-          isOpen={isUploadOpen}
-          onClose={onUploadClose}
-          onUpload={handleMediaUpload}
-          acceptedTypes={['image/*', 'video/*']}
-          maxFiles={10}
-        />
-      </VStack>
+          {/* Content Tabs */}
+          <Tabs>
+            <TabList>
+              <Tab>Images ({moodBoard.images?.length || 0})</Tab>
+              <Tab>Videos ({moodBoard.videos?.length || 0})</Tab>
+              <Tab>Links ({moodBoard.inspirationLinks?.length || 0})</Tab>
+            </TabList>
+
+            <TabPanels>
+              {/* Images Tab */}
+              <TabPanel px={0}>
+                {moodBoard.images && moodBoard.images.length > 0 ? (
+                  <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+                    {moodBoard.images.map((image) => (
+                      <Box
+                        key={image.id}
+                        borderRadius="lg"
+                        overflow="hidden"
+                        shadow="md"
+                        transition="transform 0.2s"
+                        _hover={{ transform: 'scale(1.02)' }}
+                      >
+                        <Image
+                          src={image.url}
+                          alt={image.filename}
+                          objectFit="cover"
+                          w="100%"
+                          h="250px"
+                        />
+                        <Box p={3} bg="white">
+                          <Text fontSize="sm" fontWeight="medium" noOfLines={1}>
+                            {image.filename}
+                          </Text>
+                        </Box>
+                      </Box>
+                    ))}
+                  </SimpleGrid>
+                ) : (
+                  <Box textAlign="center" py={12}>
+                    <Text color="gray.500">No images added yet</Text>
+                  </Box>
+                )}
+              </TabPanel>
+
+              {/* Videos Tab */}
+              <TabPanel px={0}>
+                {moodBoard.videos && moodBoard.videos.length > 0 ? (
+                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                    {moodBoard.videos.map((video) => (
+                      <Box
+                        key={video.id}
+                        borderRadius="lg"
+                        overflow="hidden"
+                        shadow="md"
+                      >
+                        <Box position="relative">
+                          <video
+                            src={video.url}
+                            controls
+                            style={{
+                              width: '100%',
+                              height: '200px',
+                              objectFit: 'cover',
+                            }}
+                          />
+                        </Box>
+                        <Box p={3} bg="white">
+                          <Text fontSize="sm" fontWeight="medium" noOfLines={1}>
+                            {video.filename}
+                          </Text>
+                        </Box>
+                      </Box>
+                    ))}
+                  </SimpleGrid>
+                ) : (
+                  <Box textAlign="center" py={12}>
+                    <Text color="gray.500">No videos added yet</Text>
+                  </Box>
+                )}
+              </TabPanel>
+
+              {/* Links Tab */}
+              <TabPanel px={0}>
+                {moodBoard.inspirationLinks && moodBoard.inspirationLinks.length > 0 ? (
+                  <VStack spacing={4} align="stretch">
+                    {moodBoard.inspirationLinks.map((link) => (
+                      <Box
+                        key={link.id}
+                        p={4}
+                        borderRadius="lg"
+                        border="1px solid"
+                        borderColor="gray.200"
+                        _hover={{ borderColor: 'purple.300', shadow: 'sm' }}
+                        transition="all 0.2s"
+                      >
+                        <VStack align="start" spacing={2}>
+                          <HStack justify="space-between" w="100%">
+                            <Text fontWeight="semibold" color="purple.600">
+                              {link.title}
+                            </Text>
+                            <IconButton
+                              size="xs"
+                              variant="ghost"
+                              aria-label="Open link"
+                              as={Link}
+                              href={link.url}
+                              isExternal
+                            >
+                              ↗
+                            </IconButton>
+                          </HStack>
+                          {link.description && (
+                            <Text fontSize="sm" color="gray.600">
+                              {link.description}
+                            </Text>
+                          )}
+                          <Text fontSize="xs" color="gray.400" fontFamily="mono">
+                            {link.url}
+                          </Text>
+                        </VStack>
+                      </Box>
+                    ))}
+                  </VStack>
+                ) : (
+                  <Box textAlign="center" py={12}>
+                    <Text color="gray.500">No inspiration links added yet</Text>
+                  </Box>
+                )}
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+
+          <Divider />
+
+          {/* Footer Info */}
+          <HStack justify="space-between" fontSize="sm" color="gray.500">
+            <Text>
+              Created: {moodBoard.createdAt ? new Date(moodBoard.createdAt).toLocaleDateString() : 'Unknown'}
+            </Text>
+            {moodBoard.updatedAt && (
+              <Text>
+                Last updated: {new Date(moodBoard.updatedAt).toLocaleDateString()}
+              </Text>
+            )}
+          </HStack>
+        </VStack>
+      </Container>
+      
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteOpen}
+        onClose={onDeleteClose}
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+        title="Delete Mood Board"
+        itemName={moodBoard?.name || 'this mood board'}
+        itemType="Mood Board"
+        warningMessage="This will permanently delete this mood board and all its images, videos, and inspiration links."
+      />
     </DashboardLayout>
-  )
+  );
 }
