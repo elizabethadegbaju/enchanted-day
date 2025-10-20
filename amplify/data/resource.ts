@@ -1,5 +1,5 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
-import { orchestratorFunction } from "../functions/resource";
+import { chat } from "../functions/resource";
 
 const schema = a.schema({
   // Enums
@@ -365,7 +365,7 @@ const schema = a.schema({
     .arguments({ prompt: a.string().required() })
     .returns(a.string())
     .authorization((allow: any) => [allow.publicApiKey()])
-    .handler(a.handler.function(orchestratorFunction)),
+    .handler(a.handler.function(chat)),
 });
 
 export const data = defineData({
