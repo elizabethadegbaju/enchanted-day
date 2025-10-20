@@ -147,7 +147,7 @@ export function InspirationLinkManager({ links, onChange }: InspirationLinkManag
     onOpen()
   }
 
-  const handleDeleteLink = (linkId: number) => {
+  const handleDeleteLink = (linkId: string) => {
     const updatedLinks = links.filter(link => link.id !== linkId)
     onChange(updatedLinks)
     toast({

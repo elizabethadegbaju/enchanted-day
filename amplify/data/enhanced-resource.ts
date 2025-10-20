@@ -34,6 +34,16 @@ const schema = a.schema({
     notes: a.string(),
   }),
 
+  // Budget category for BudgetInfo
+  BudgetCategoryInfo: a.customType({
+    name: a.string().required(),
+    allocated: a.float().required(),
+    spent: a.float().required(),
+    percentage: a.float(),
+    vendors: a.string().array(),
+    phases: a.string().array(),
+  }),
+
   // Budget information that matches UI expectations
   BudgetInfo: a.customType({
     total: a.float().required(),
@@ -41,7 +51,8 @@ const schema = a.schema({
     spent: a.float().required(),
     remaining: a.float().required(),
     currency: a.string().required(),
-    categories: a.string().array(), // Simple array for now
+    contingency_percentage: a.float(),
+    categories: a.ref("BudgetCategoryInfo").array(),
   }),
 
   // Phase-specific requirements

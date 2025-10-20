@@ -124,7 +124,7 @@ const schema = a.schema({
 
   Wedding: a
     .model({
-      user_id: a.integer().required(),
+      user_id: a.string().required(),
       couple_names: a.string().array().required(),
       wedding_type: a.ref("WeddingType").required(),
       status: a.ref("WeddingStatus").required(),

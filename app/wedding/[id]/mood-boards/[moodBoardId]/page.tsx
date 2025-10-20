@@ -43,7 +43,7 @@ interface LocalMoodBoard {
 }
 
 interface LocalMediaAsset {
-  id: number;
+  id: string;
   type: 'IMAGE' | 'VIDEO';
   url: string;
   s3_key: string;
@@ -54,7 +54,7 @@ interface LocalMediaAsset {
 }
 
 interface LocalInspirationLink {
-  id: number;
+  id: string;
   url: string;
   title: string;
   description: string;
@@ -85,7 +85,7 @@ export default function MoodBoardDetailPage() {
     description: 'Main inspiration and color palette for the entire wedding',
     images: [
       {
-        id: 1,
+        id: '1',
         type: 'IMAGE',
         url: '/api/placeholder/400/300',
         s3_key: 'wedding-1/mood-1.jpg',
@@ -95,7 +95,7 @@ export default function MoodBoardDetailPage() {
         metadata: { size: 1024000, format: 'jpg', dimensions: { width: 400, height: 300 } }
       },
       {
-        id: 2,
+        id: '2',
         type: 'IMAGE',
         url: '/api/placeholder/400/300',
         s3_key: 'wedding-1/mood-2.jpg',
@@ -108,7 +108,7 @@ export default function MoodBoardDetailPage() {
     videos: [],
     links: [
       {
-        id: 1,
+        id: '1',
         url: 'https://pinterest.com/pin/123',
         title: 'Elegant Garden Wedding',
         description: 'Beautiful outdoor ceremony setup with romantic lighting',
@@ -170,7 +170,7 @@ export default function MoodBoardDetailPage() {
     }))
   }
 
-  const handleMediaDelete = (mediaId: number) => {
+  const handleMediaDelete = (mediaId: string) => {
     setMoodBoard((prev: LocalMoodBoard) => ({
       ...prev,
       images: prev.images.filter(img => img.id !== mediaId),

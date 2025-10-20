@@ -30,7 +30,7 @@ export function MoodBoardCard({ moodBoard, onView, onEdit }: MoodBoardCardProps)
   const cardBg = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.600')
   
-  const totalAssets = (moodBoard.images?.length || 0) + (moodBoard.videos?.length || 0) + (moodBoard.links?.length || 0)
+  const totalAssets = (moodBoard.images?.length || 0) + (moodBoard.videos?.length || 0) + (moodBoard.inspiration_links?.length || 0)
   const previewImage = moodBoard.images?.[0]
 
   return (
@@ -140,7 +140,7 @@ export function MoodBoardCard({ moodBoard, onView, onEdit }: MoodBoardCardProps)
               </HStack>
               <HStack spacing={1}>
                 <LinkIcon size={14} />
-                <Text>{moodBoard.links?.length || 0}</Text>
+                <Text>{moodBoard.inspiration_links?.length || 0}</Text>
               </HStack>
               <Text>•</Text>
               <Text>{totalAssets} total items</Text>

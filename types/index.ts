@@ -1,18 +1,15 @@
 // Re-export types from the Amplify schema
-import type { Schema } from "@/amplify/data/resource";
+import type { Schema } from "@/amplify/data/enhanced-resource";
 
 // Extract the generated types from the schema
 export type Wedding = Schema["Wedding"]["type"];
 export type BudgetCategory = Schema["BudgetCategory"]["type"];
 export type Transaction = Schema["Transaction"]["type"];
-export type OverallBudget = Schema["OverallBudget"]["type"];
 export type Guest = Schema["Guest"]["type"];
 export type PlusOne = Schema["PlusOne"]["type"];
 export type Communication = Schema["Communication"]["type"];
 export type MoodBoard = Schema["MoodBoard"]["type"];
 export type Milestone = Schema["Milestone"]["type"];
-export type ProjectDeadline = Schema["ProjectDeadline"]["type"];
-export type ContingencyPlan = Schema["ContingencyPlan"]["type"];
 export type Vendor = Schema["Vendor"]["type"];
 export type VendorCommunication = Schema["VendorCommunication"]["type"];
 export type Activity = Schema["Activity"]["type"];
@@ -35,19 +32,32 @@ export type ContactMethod = Schema["ContactMethod"]["type"];
 export type WeddingStatus = Schema["WeddingStatus"]["type"];
 export type WeddingType = Schema["WeddingType"]["type"];
 
+// Enhanced schema custom types
 export type VendorCategory = Schema["VendorCategory"]["type"];
 export type ContactInfo = Schema["ContactInfo"]["type"];
-export type Budget = Schema["Budget"]["type"];
-export type Service = Schema["Service"]["type"];
-export type PaymentSchedule = Schema["PaymentSchedule"]["type"];
-export type Contract = Schema["Contract"]["type"];
-export type Deadline = Schema["Deadline"]["type"];
-export type ColorPalette = Schema["ColorPalette"]["type"];
 export type MediaAsset = Schema["MediaAsset"]["type"];
 export type InspirationLink = Schema["InspirationLink"]["type"];
 export type PhaseAttendance = Schema["PhaseAttendance"]["type"];
 export type WeddingPhase = Schema["WeddingPhase"]["type"];
-export type ContingencyAction = Schema["ContingencyAction"]["type"];
+export type Venue = Schema["Venue"]["type"];
+export type BudgetInfo = Schema["BudgetInfo"]["type"];
+export type PhaseRequirements = Schema["PhaseRequirements"]["type"];
+export type ScheduleItem = Schema["ScheduleItem"]["type"];
+export type TimelineInfo = Schema["TimelineInfo"]["type"];
+export type WeddingPreferences = Schema["WeddingPreferences"]["type"];
+export type OverallBudget = Schema["OverallBudget"]["type"];
+export type OverallBudgetCategory = Schema["OverallBudgetCategory"]["type"];
+export type PaymentScheduleItem = Schema["PaymentScheduleItem"]["type"];
+export type SubTask = Schema["SubTask"]["type"];
+export type VendorService = Schema["VendorService"]["type"];
+
+// Additional types for compatibility (not in enhanced schema but needed by components)
+export interface ColorPalette {
+  primary?: string[];
+  secondary?: string[];
+  accent?: string[];
+  neutral?: string[];
+}
 
 // ============================================================================
 // COMPONENT-FRIENDLY INTERFACES
@@ -700,8 +710,6 @@ export function createMockUIWedding(id: string): UIWedding {
 }
 
 // Legacy compatibility exports
-export type BudgetInfo = UIBudgetInfo;
-export type WeddingPreferences = UIWeddingPreferences;
 export type WeddingForComponents = UIWedding;
 export type WeddingPhaseForComponents = UIWeddingPhase;
 

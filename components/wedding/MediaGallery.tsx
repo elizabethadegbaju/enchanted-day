@@ -45,7 +45,7 @@ import type { MediaAsset } from '@/types'
 interface MediaGalleryProps {
   images: MediaAsset[]
   videos: MediaAsset[]
-  onDelete: (mediaId: number) => void
+  onDelete: (mediaId: string) => void
   onUpload: () => void
 }
 
