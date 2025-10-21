@@ -34,6 +34,7 @@ import {
   MessageCircle
 } from 'lucide-react'
 import { WeddingSelector } from '@/components/wedding/WeddingSelector'
+import { UserDisplayName } from '@/components/user/UserDisplayName'
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -114,9 +115,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 <MenuList>
                   <MenuItem>
                     <VStack align="start" spacing={0}>
-                      <Text fontWeight="semibold">
-                        {user?.username || 'User'}
-                      </Text>
+                      <UserDisplayName 
+                        fontWeight="semibold"
+                        fallback={user?.username || 'User'}
+                      />
                       <Text fontSize="sm" color="neutral.600">
                         {user?.signInDetails?.loginId || 'user@example.com'}
                       </Text>

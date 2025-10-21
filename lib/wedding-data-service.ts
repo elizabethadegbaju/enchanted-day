@@ -1088,6 +1088,120 @@ export async function getMoodBoardDetail(moodBoardId: string): Promise<any> {
   }
 }
 
+export async function updateMoodBoard(moodBoardId: string, updateData: {
+  name?: string;
+  description?: string;
+  isPublic?: boolean;
+  isFinalized?: boolean;
+  styleKeywords?: string[];
+  colorPalette?: {
+    primary?: string[];
+    secondary?: string[];
+    accent?: string[];
+    neutral?: string[];
+  };
+  inspirationLinks?: Array<{
+    id?: string;
+    url: string;
+    title: string;
+    description?: string;
+  }>;
+  images?: Array<{
+    id?: string;
+    url: string;
+    filename: string;
+  }>;
+  videos?: Array<{
+    id?: string;
+    url: string;
+    filename: string;
+  }>;
+}): Promise<any> {
+  try {
+    const updatedData: any = {
+      id: moodBoardId,
+      updated_at: new Date().toISOString()
+    };
+
+    // Only include fields that are provided
+    if (updateData.name !== undefined) {
+      updatedData.name = updateData.name;
+    }
+    
+    if (updateData.description !== undefined) {
+      updatedData.description = updateData.description;
+    }
+    
+    if (updateData.isPublic !== undefined) {
+      updatedData.is_public = updateData.isPublic;
+    }
+    
+    if (updateData.isFinalized !== undefined) {
+      updatedData.is_finalized = updateData.isFinalized;
+    }
+    
+    if (updateData.styleKeywords !== undefined) {
+      updatedData.style_keywords = updateData.styleKeywords;
+    }
+    
+    if (updateData.colorPalette !== undefined) {
+      updatedData.color_palette = {
+        primary: updateData.colorPalette.primary || [],
+        secondary: updateData.colorPalette.secondary || [],
+        accent: updateData.colorPalette.accent || [],
+        neutral: updateData.colorPalette.neutral || []
+      };
+    }
+    
+    if (updateData.inspirationLinks !== undefined) {
+      updatedData.inspiration_links = updateData.inspirationLinks.map(link => ({
+        id: link.id || `link_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        url: link.url,
+        title: link.title,
+        description: link.description || ''
+      }));
+    }
+    
+    if (updateData.images !== undefined) {
+      updatedData.images = updateData.images.map(img => ({
+        id: img.id || `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        url: img.url,
+        filename: img.filename
+      }));
+    }
+    
+    if (updateData.videos !== undefined) {
+      updatedData.videos = updateData.videos.map(vid => ({
+        id: vid.id || `vid_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        url: vid.url,
+        filename: vid.filename
+      }));
+    }
+
+    const { data: updatedMoodBoard } = await client.models.MoodBoard.update(updatedData);
+    
+    if (!updatedMoodBoard) {
+      throw new Error('Failed to update mood board');
+    }
+
+    // Log the activity
+    await createActivity({
+      type: 'moodboard',
+      title: 'Mood Board Updated',
+      description: `Updated mood board "${updateData.name || 'Unnamed'}"`,
+      priority: 'MEDIUM',
+      relatedEntityType: 'MOODBOARD',
+      relatedEntityId: moodBoardId,
+      weddingId: updatedMoodBoard.wedding_id
+    });
+
+    return updatedMoodBoard;
+  } catch (error) {
+    console.error('Error updating mood board:', error);
+    throw error;
+  }
+}
+
 // ============================================================================
 // ACTIVITY LOGGING HELPERS
 // ============================================================================

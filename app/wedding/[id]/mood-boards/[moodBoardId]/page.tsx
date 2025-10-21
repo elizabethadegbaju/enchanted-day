@@ -35,7 +35,8 @@ import {
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal';
-import { getMoodBoardDetail, deleteMoodBoard } from '@/lib/wedding-data-service';
+import { EditMoodBoardModal } from '@/components/wedding/EditMoodBoardModal';
+import { getMoodBoardDetail, deleteMoodBoard, updateMoodBoard } from '@/lib/wedding-data-service';
 import type { UIMoodBoard } from '@/types';
 import { MoreVertical, Trash2 } from 'lucide-react';
 
@@ -47,6 +48,7 @@ export default function MoodBoardDetailPage({
   const router = useRouter();
   const toast = useToast();
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   
   const [moodBoard, setMoodBoard] = useState<UIMoodBoard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,14 +81,28 @@ export default function MoodBoardDetailPage({
   }, [params.moodBoardId, toast]);
 
   const handleEdit = () => {
-    // TODO: Implement edit functionality
-    toast({
-      title: 'Edit Mode',
-      description: 'Edit functionality coming soon!',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    });
+    onEditOpen();
+  };
+
+  const handleUpdateMoodBoard = async (updateData: Partial<UIMoodBoard>) => {
+    try {
+      await updateMoodBoard(params.moodBoardId, updateData);
+      
+      // Refresh the mood board data
+      const updatedMoodBoard = await getMoodBoardDetail(params.moodBoardId);
+      setMoodBoard(updatedMoodBoard);
+      
+      toast({
+        title: 'Mood Board Updated',
+        description: 'Your changes have been saved successfully.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error updating mood board:', error);
+      throw error; // Let the modal handle the error display
+    }
   };
 
   const handleShare = () => {
@@ -428,6 +444,16 @@ export default function MoodBoardDetailPage({
         itemType="Mood Board"
         warningMessage="This will permanently delete this mood board and all its images, videos, and inspiration links."
       />
+
+      {/* Edit Mood Board Modal */}
+      {moodBoard && (
+        <EditMoodBoardModal
+          isOpen={isEditOpen}
+          onClose={onEditClose}
+          onSubmit={handleUpdateMoodBoard}
+          moodBoard={moodBoard}
+        />
+      )}
     </DashboardLayout>
   );
 }

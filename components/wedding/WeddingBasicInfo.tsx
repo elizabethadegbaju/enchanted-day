@@ -74,12 +74,12 @@ export const WeddingBasicInfo: React.FC<WeddingBasicInfoProps> = ({
   }
 
   const addCoupleName = () => {
-    if (coupleNames.length < 4) {
+    if (coupleNames.length < 2) {
       onUpdate({ coupleNames: [...coupleNames, ''] })
     } else {
       toast({
         title: 'Maximum reached',
-        description: 'You can add up to 4 names maximum.',
+        description: 'You can add up to 2 names for the couple.',
         status: 'warning',
         duration: 3000,
         isClosable: true,
@@ -140,7 +140,7 @@ export const WeddingBasicInfo: React.FC<WeddingBasicInfoProps> = ({
           Couple Names
         </FormLabel>
         <FormHelperText mb={4}>
-          Enter the names of everyone getting married (up to 4 people)
+          Enter the names of the couple getting married (2 people)
         </FormHelperText>
 
         <VStack spacing={3} align="stretch">
@@ -165,7 +165,7 @@ export const WeddingBasicInfo: React.FC<WeddingBasicInfoProps> = ({
             </HStack>
           ))}
 
-          {coupleNames.length < 4 && (
+          {coupleNames.length < 2 && (
             <Button
               variant="outline"
               leftIcon={<Plus size={16} />}
@@ -173,7 +173,7 @@ export const WeddingBasicInfo: React.FC<WeddingBasicInfoProps> = ({
               size="sm"
               alignSelf="start"
             >
-              Add Another Person
+              Add Partner Name
             </Button>
           )}
         </VStack>

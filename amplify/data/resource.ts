@@ -293,6 +293,21 @@ const schema = a.schema({
     currency: a.string().required(),
   }),
 
+  // User Profile Model
+  UserProfile: a
+    .model({
+      user_id: a.string().required(),
+      first_name: a.string().required(),
+      last_name: a.string().required(),
+      email: a.string(),
+      phone: a.string(),
+      avatar_url: a.string(),
+      timezone: a.string(),
+      created_at: a.datetime(),
+      updated_at: a.datetime(),
+    })
+    .authorization((allow: any) => [allow.publicApiKey()]),
+
   // Main Wedding Model
   Wedding: a
     .model({
