@@ -36,9 +36,34 @@ export const handler: Handler = async (event, context) => {
 
     const client = new BedrockAgentCoreClient({ region: "eu-central-1" });
     
+    // Build the payload based on request type
+    const requestType = requestBody.type || 'chat';
+    let prompt = requestBody.prompt || event.prompt;
+    
+    // Enhance prompt based on request type
+    switch (requestType) {
+      case 'guest_inquiry':
+        prompt = `GUEST INQUIRY: ${prompt}. Context: ${JSON.stringify(requestBody.context || {})}`;
+        break;
+      case 'optimization':
+        prompt = `WEDDING OPTIMIZATION: ${prompt}. Goals: ${JSON.stringify(requestBody.context?.goals || [])}`;
+        break;
+      case 'negotiation':
+        prompt = `VENDOR NEGOTIATION: ${prompt}. Terms: ${JSON.stringify(requestBody.context || {})}`;
+        break;
+      case 'vendor_coordination':
+        prompt = `VENDOR COORDINATION: ${prompt}. Details: ${JSON.stringify(requestBody.context || {})}`;
+        break;
+      default:
+        // Keep original prompt for general chat
+        break;
+    }
+    
     const payload = {
-      prompt: requestBody.prompt || event.prompt,
+      prompt,
       wedding_id: requestBody.wedding_id || event.wedding_id,
+      type: requestType,
+      context: requestBody.context || {}
     };
     
     if (!payload.prompt) {

@@ -157,7 +157,4 @@ export class AmplifyDataClient {
 // Export a singleton instance
 export const amplifyDataClient = new AmplifyDataClient();
 
-// For backward compatibility, also export as apiClient
-export const apiClient = amplifyDataClient;
-
 export default amplifyDataClient;

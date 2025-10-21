@@ -15,7 +15,7 @@ import {
   StatHelpText
 } from '@chakra-ui/react';
 import { MessageSquare, TrendingDown, CheckCircle } from 'lucide-react';
-import { apiClient } from '@/lib/api';
+import { ChatService } from '@/lib/chat-service';
 
 interface ContractTerms {
   totalCost: number;
@@ -48,13 +48,11 @@ export const VendorNegotiator: React.FC<VendorNegotiatorProps> = ({
     setIsNegotiating(true);
 
     try {
-      const negotiation = await apiClient.negotiateContract(vendorId, {
+      const negotiation = await ChatService.negotiateContract(vendorId, {
         weddingId,
-        terms: originalTerms,
+        terms: { totalCost: originalTerms.totalCost },
         budget: originalTerms.totalCost
-      });
-
-      // Type assertion since we know the expected structure from StrandsWorkflowResponse
+      });      // Type assertion since we know the expected structure from StrandsWorkflowResponse
       const negotiationData = negotiation.data as NegotiationResult;
       setResult(negotiationData);
 

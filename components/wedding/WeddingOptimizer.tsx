@@ -19,7 +19,7 @@ import {
   StatHelpText
 } from '@chakra-ui/react';
 import { Zap, TrendingUp, DollarSign } from 'lucide-react';
-import { apiClient } from '@/lib/api';
+import { ChatService } from '@/lib/chat-service';
 
 interface WeddingOptimizerProps {
   weddingId: string;
@@ -55,7 +55,7 @@ export const WeddingOptimizer: React.FC<WeddingOptimizerProps> = ({ weddingId })
         setProgress((prev: number) => Math.min(prev + 20, 90));
       }, 500);
 
-      const optimization = await apiClient.optimizeWedding(weddingId, {
+      const optimization = await ChatService.optimizeWedding(weddingId, {
         goals: ['reduce_cost', 'improve_timeline', 'enhance_quality']
       });
 

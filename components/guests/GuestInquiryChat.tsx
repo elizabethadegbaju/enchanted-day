@@ -11,7 +11,7 @@ import {
   Spinner
 } from '@chakra-ui/react';
 import { Send, MessageCircle } from 'lucide-react';
-import { apiClient, parseStrandsStream } from '@/lib/api';
+import { ChatService, parseStrandsStream } from '@/lib/chat-service';
 
 interface GuestInquiryChatProps {
   guestId: string;
@@ -60,7 +60,7 @@ export const GuestInquiryChat: React.FC<GuestInquiryChatProps> = ({
     setIsStreaming(true);
 
     try {
-      const stream = await apiClient.streamGuestInquiry(guestId, input.trim(), urgency);
+      const stream = await ChatService.streamGuestInquiry(guestId, input.trim(), urgency);
       const reader = stream.getReader();
       
       let aiMessage: ChatMessage = {
