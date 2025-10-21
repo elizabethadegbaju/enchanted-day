@@ -37,6 +37,8 @@ import {
 import { useState, useRef, useEffect } from 'react'
 import { useAuthenticator } from '@aws-amplify/ui-react'
 import { amplifyDataClient } from '@/lib/amplify-client'
+import { ChatService } from '@/lib/chat-service'
+import { useWedding } from '@/contexts/WeddingContext'
 
 interface ChatMessage {
   id: string
@@ -84,6 +86,7 @@ export default function ChatPage() {
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { user } = useAuthenticator()
+  const { selectedWeddingId } = useWedding()
 
   const bgColor = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('neutral.200', 'gray.700')
@@ -112,26 +115,27 @@ export default function ChatPage() {
     setIsTyping(true)
 
     try {
-      // For now, use a mock response since we don't have a chat endpoint in the schema
-      // In a real implementation, you would create a chat/messaging service
-      const mockResponse = generateAIResponse(currentInput)
+      // Use the actual Bedrock agent via Lambda function
+      const aiResponse = await ChatService.sendMessage(currentInput, selectedWeddingId || undefined)
       
       const aiMessage: ChatMessage = {
-        id: Date.now().toString(),
+        id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: mockResponse.content,
+        content: aiResponse,
         timestamp: new Date(),
-        agent: mockResponse.agent,
-        actions: mockResponse.actions
+        agent: 'EnchantedDay AI Assistant',
+        // You can add dynamic actions based on the AI response if needed
+        actions: generateActionsFromResponse(aiResponse)
       }
       
       setMessages((prev: ChatMessage[]) => [...prev, aiMessage])
     } catch (error) {
-      console.error('Failed to send message to AI:', error)
+      console.error('Failed to get AI response:', error)
       
+      // Fallback to mock response if the Lambda function fails
       const mockResponse = generateAIResponse(currentInput)
       const fallbackMessage: ChatMessage = {
-        id: Date.now().toString(),
+        id: (Date.now() + 1).toString(),
         type: 'ai',
         content: "I'm having trouble connecting to my AI services right now. Let me try to help you with a basic response.\n\n" + mockResponse.content,
         timestamp: new Date(),
@@ -143,6 +147,29 @@ export default function ChatPage() {
     } finally {
       setIsTyping(false)
     }
+  }
+
+  const generateActionsFromResponse = (response: string): ChatAction[] => {
+    // You can enhance this to parse the AI response and generate relevant actions
+    const actions: ChatAction[] = []
+    
+    if (response.toLowerCase().includes('wedding') || response.toLowerCase().includes('create')) {
+      actions.push({ id: '1', label: 'Create Wedding', type: 'navigate', data: { path: '/wedding/create' } })
+    }
+    if (response.toLowerCase().includes('dashboard') || response.toLowerCase().includes('overview')) {
+      actions.push({ id: '2', label: 'View Dashboard', type: 'navigate', data: { path: '/dashboard' } })
+    }
+    if (response.toLowerCase().includes('vendor')) {
+      actions.push({ id: '3', label: 'Manage Vendors', type: 'navigate', data: { path: '/vendors' } })
+    }
+    if (response.toLowerCase().includes('guest')) {
+      actions.push({ id: '4', label: 'Manage Guests', type: 'navigate', data: { path: '/guests' } })
+    }
+    if (response.toLowerCase().includes('budget')) {
+      actions.push({ id: '5', label: 'View Budget', type: 'navigate', data: { path: '/budget' } })
+    }
+    
+    return actions
   }
 
   const generateAIResponse = (userInput: string): { content: string; agent: string; actions: ChatAction[] } => {

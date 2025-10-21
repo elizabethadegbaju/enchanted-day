@@ -5,5 +5,8 @@ export const chat = defineFunction({
   name: "chat",
   layers: {
     "@aws-sdk/client-bedrock-agentcore": "arn:aws:lambda:eu-central-1:911167904324:layer:layer:1"
+  },
+  environment: {
+    // Add any environment variables needed
   }
 });
