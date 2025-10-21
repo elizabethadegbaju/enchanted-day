@@ -166,45 +166,55 @@ export interface DashboardData {
   }>;
 }
 
-export async function getDashboardData(userId?: string): Promise<DashboardData> {
+export async function getDashboardData(weddingId?: string, userId?: string): Promise<DashboardData> {
   try {
-    // Get current user ID if not provided
-    const currentUserId = userId || await getCurrentUserId();
+    let targetWeddingId = weddingId;
     
-    // Get user's weddings
-    const { data: weddings } = await client.models.Wedding.list({
-      filter: { user_id: { eq: currentUserId } }
-    });
+    if (!targetWeddingId) {
+      // Get current user ID if not provided
+      const currentUserId = userId || await getCurrentUserId();
+      
+      // Get user's weddings
+      const { data: weddings } = await client.models.Wedding.list({
+        filter: { user_id: { eq: currentUserId } }
+      });
 
-    if (!weddings || weddings.length === 0) {
-      throw new Error('No weddings found');
+      if (!weddings || weddings.length === 0) {
+        throw new Error('No weddings found');
+      }
+
+      targetWeddingId = weddings[0].id;
     }
 
-    const wedding = weddings[0];
+    // Get the specific wedding
+    const { data: wedding } = await client.models.Wedding.get({ id: targetWeddingId });
+    if (!wedding) {
+      throw new Error('Wedding not found');
+    }
 
     // Get wedding phases to determine primary date
     const { data: phases } = await client.models.WeddingPhase.list({
-      filter: { wedding_id: { eq: wedding.id } }
+      filter: { wedding_id: { eq: targetWeddingId } }
     });
 
     // Get vendors count
     const { data: vendors } = await client.models.Vendor.list({
-      filter: { wedding_id: { eq: wedding.id } }
+      filter: { wedding_id: { eq: targetWeddingId } }
     });
 
     // Get guests count and RSVP stats
     const { data: guests } = await client.models.Guest.list({
-      filter: { wedding_id: { eq: wedding.id } }
+      filter: { wedding_id: { eq: targetWeddingId } }
     });
 
     // Get tasks for completion stats
     const { data: tasks } = await client.models.Task.list({
-      filter: { wedding_id: { eq: wedding.id } }
+      filter: { wedding_id: { eq: targetWeddingId } }
     });
 
     // Get recent activities
     const { data: activities } = await client.models.Activity.list({
-      filter: { wedding_id: { eq: wedding.id } },
+      filter: { wedding_id: { eq: targetWeddingId } },
       limit: 10
     });
 
@@ -215,7 +225,7 @@ export async function getDashboardData(userId?: string): Promise<DashboardData> 
     const { data: upcomingTasks } = await client.models.Task.list({
       filter: {
         and: [
-          { wedding_id: { eq: wedding.id } },
+          { wedding_id: { eq: targetWeddingId } },
           { due_date: { le: thirtyDaysFromNow.toISOString().split('T')[0] } },
           { status: { ne: 'COMPLETED' } }
         ]

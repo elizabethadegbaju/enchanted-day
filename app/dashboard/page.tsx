@@ -34,9 +34,11 @@ import {
 } from 'lucide-react'
 import { getDashboardData, type DashboardData } from '@/lib/wedding-data-service'
 import { formatDateForDisplay, getDaysUntilDate } from '@/lib/data-utils'
+import { useWedding } from '@/contexts/WeddingContext'
 import type { Wedding } from '@/types'
 
 export default function DashboardPage() {
+  const { selectedWeddingId, isLoading: weddingLoading } = useWedding();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -45,8 +47,10 @@ export default function DashboardPage() {
   const borderColor = useColorModeValue('gray.200', 'gray.600')
 
   useEffect(() => {
-    loadDashboardData()
-  }, [])
+    if (selectedWeddingId && !weddingLoading) {
+      loadDashboardData()
+    }
+  }, [selectedWeddingId, weddingLoading])
 
   const loadDashboardData = async () => {
     try {
@@ -57,7 +61,7 @@ export default function DashboardPage() {
       
       // getCurrentUser() is called inside getDashboardData()
       try {
-        const data = await getDashboardData()
+        const data = await getDashboardData(selectedWeddingId || undefined)
         setDashboardData(data)
       } catch (dataError) {
         console.error('Failed to fetch dashboard data:', dataError)
@@ -79,12 +83,32 @@ export default function DashboardPage() {
     }
   }
 
-  if (loading) {
+  if (loading || weddingLoading) {
     return (
       <DashboardLayout title="Wedding Overview">
         <VStack spacing={8} align="center" justify="center" minH="400px">
           <Spinner size="xl" color="brand.500" />
           <Text>Loading your wedding dashboard...</Text>
+        </VStack>
+      </DashboardLayout>
+    )
+  }
+
+  if (!selectedWeddingId) {
+    return (
+      <DashboardLayout title="Wedding Overview">
+        <VStack spacing={8} align="center" justify="center" minH="400px">
+          <Text fontSize="xl" textAlign="center">
+            Please select a wedding to view the dashboard
+          </Text>
+          <Button
+            leftIcon={<Plus size={16} />}
+            colorScheme="brand"
+            size="lg"
+            onClick={() => window.location.href = '/wedding/create'}
+          >
+            Create Your First Wedding
+          </Button>
         </VStack>
       </DashboardLayout>
     )
@@ -221,7 +245,7 @@ export default function DashboardPage() {
                 <StatNumber color="brand.600" fontSize="2xl">
                   {stats.daysUntilWedding}
                 </StatNumber>
-                <StatHelpText>June 15, 2024</StatHelpText>
+                <StatHelpText>{formatDateForDisplay(dashboardData.wedding.weddingDate)}</StatHelpText>
               </Stat>
             </CardBody>
           </Card>

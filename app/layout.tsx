@@ -9,6 +9,7 @@ import AuthWrapper from './AuthWrapper';
 import { ThemeProvider } from '@aws-amplify/ui-react'
 import { Amplify } from 'aws-amplify'
 import outputs from '@/amplify_outputs.json'
+import { WeddingProvider } from '@/contexts/WeddingContext'
 import '@aws-amplify/ui-react/styles.css'
 import './amplify-ui-custom.css'
 import './globals.css'
@@ -36,7 +37,9 @@ export default function RootLayout({
           <ThemeProvider theme={amplifyTheme}>
             <ChakraProvider theme={theme}>
               <AuthWrapper>
-                {children}
+                <WeddingProvider>
+                  {children}
+                </WeddingProvider>
               </AuthWrapper>
             </ChakraProvider>
           </ThemeProvider>

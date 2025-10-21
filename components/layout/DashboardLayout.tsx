@@ -18,6 +18,7 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
+  Grid,
 } from '@chakra-ui/react'
 import { ReactNode } from 'react'
 import { useAuthenticator } from '@aws-amplify/ui-react'
@@ -32,6 +33,7 @@ import {
   LogOut,
   MessageCircle
 } from 'lucide-react'
+import { WeddingSelector } from '@/components/wedding/WeddingSelector'
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -136,39 +138,52 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
       {/* Main Content */}
       <Container maxW="7xl" py={8}>
-        <VStack align="stretch" spacing={6}>
-          {/* Breadcrumbs and Title */}
-          {(breadcrumbs.length > 0 || title) && (
-            <Box>
-              {breadcrumbs.length > 0 && (
-                <Breadcrumb
-                  spacing={2}
-                  separator={<ChevronRight size={12} />}
-                  fontSize="sm"
-                  color="neutral.600"
-                  mb={2}
-                >
-                  {breadcrumbs.map((crumb, index) => (
-                    <BreadcrumbItem key={index}>
-                      <BreadcrumbLink href={crumb.href}>
-                        {crumb.label}
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                  ))}
-                </Breadcrumb>
-              )}
-              
-              {title && (
-                <Text fontSize="2xl" fontWeight="bold" color="neutral.800">
-                  {title}
-                </Text>
-              )}
-            </Box>
-          )}
+        <Grid templateColumns={{ base: '1fr', lg: '250px 1fr' }} gap={8}>
+          {/* Sidebar */}
+          <VStack align="stretch" spacing={4} display={{ base: 'none', lg: 'flex' }}>
+            <WeddingSelector />
+          </VStack>
 
-          {/* Page Content */}
-          <Box>{children}</Box>
-        </VStack>
+          {/* Main Content Area */}
+          <VStack align="stretch" spacing={6}>
+            {/* Mobile Wedding Selector */}
+            <Box display={{ base: 'block', lg: 'none' }}>
+              <WeddingSelector />
+            </Box>
+
+            {/* Breadcrumbs and Title */}
+            {(breadcrumbs.length > 0 || title) && (
+              <Box>
+                {breadcrumbs.length > 0 && (
+                  <Breadcrumb
+                    spacing={2}
+                    separator={<ChevronRight size={12} />}
+                    fontSize="sm"
+                    color="neutral.600"
+                    mb={2}
+                  >
+                    {breadcrumbs.map((crumb, index) => (
+                      <BreadcrumbItem key={index}>
+                        <BreadcrumbLink href={crumb.href}>
+                          {crumb.label}
+                        </BreadcrumbLink>
+                      </BreadcrumbItem>
+                    ))}
+                  </Breadcrumb>
+                )}
+                
+                {title && (
+                  <Text fontSize="2xl" fontWeight="bold" color="neutral.800">
+                    {title}
+                  </Text>
+                )}
+              </Box>
+            )}
+
+            {/* Page Content */}
+            <Box>{children}</Box>
+          </VStack>
+        </Grid>
       </Container>
     </Box>
   )

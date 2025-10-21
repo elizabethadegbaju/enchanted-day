@@ -50,8 +50,10 @@ import {
   type CommunicationData,
   type PaymentData
 } from '@/lib/wedding-data-service';
+import { useWedding } from '@/contexts/WeddingContext';
 
 export default function VendorsPage() {
+  const { selectedWeddingId, isLoading: weddingLoading } = useWedding();
   const toast = useToast();
   const [vendors, setVendors] = useState<VendorListData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,9 +75,11 @@ export default function VendorsPage() {
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
   const loadVendors = async () => {
+    if (!selectedWeddingId) return;
+    
     try {
       setLoading(true);
-      const vendorsData = await getVendorsData();
+      const vendorsData = await getVendorsData(selectedWeddingId);
       setVendors(vendorsData);
     } catch (error) {
       console.error('Error loading vendors:', error);
@@ -92,12 +96,18 @@ export default function VendorsPage() {
   };
 
   useEffect(() => {
-    loadVendors();
-  }, []);
+    if (selectedWeddingId && !weddingLoading) {
+      loadVendors();
+    }
+  }, [selectedWeddingId, weddingLoading]);
 
   const handleAddVendor = async (vendorData: VendorFormData) => {
+    if (!selectedWeddingId) {
+      throw new Error('No wedding selected');
+    }
+    
     try {
-      await createVendor(vendorData);
+      await createVendor({ ...vendorData, weddingId: selectedWeddingId });
       await loadVendors();
     } catch (error) {
       console.error('Error adding vendor:', error);
@@ -192,13 +202,35 @@ export default function VendorsPage() {
     }
   };
 
-  if (loading) {
+  if (loading || weddingLoading) {
     return (
       <DashboardLayout>
         <Container maxW="7xl" py={8}>
           <VStack spacing={8} align="center" justify="center" minH="400px">
             <Spinner size="xl" color="purple.500" />
             <Text>Loading vendors...</Text>
+          </VStack>
+        </Container>
+      </DashboardLayout>
+    );
+  }
+
+  if (!selectedWeddingId) {
+    return (
+      <DashboardLayout>
+        <Container maxW="7xl" py={8}>
+          <VStack spacing={8} align="center" justify="center" minH="400px">
+            <Text fontSize="xl" textAlign="center">
+              Please select a wedding to manage vendors
+            </Text>
+            <Button
+              leftIcon={<Plus size={16} />}
+              colorScheme="purple"
+              size="lg"
+              onClick={() => window.location.href = '/wedding/create'}
+            >
+              Create Your First Wedding
+            </Button>
           </VStack>
         </Container>
       </DashboardLayout>
