@@ -214,16 +214,51 @@ export default function ChatPage() {
     return { content: response, agent, actions }
   }
 
-  const handleQuickAction = (action: string) => {
-    const message: ChatMessage = {
+  const handleQuickAction = async (action: string) => {
+    const userInput = `Help me with ${action}`
+    
+    const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
-      content: `Help me with ${action}`,
+      content: userInput,
       timestamp: new Date()
     }
 
-    setMessages((prev: ChatMessage[]) => [...prev, message])
-    handleSendMessage()
+    setMessages((prev: ChatMessage[]) => [...prev, userMessage])
+    setIsTyping(true)
+
+    try {
+      // Use the actual Bedrock agent via Lambda function
+      const aiResponse = await ChatService.sendMessage(userInput, selectedWeddingId || undefined)
+      
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: aiResponse,
+        timestamp: new Date(),
+        agent: 'EnchantedDay AI Assistant',
+        actions: generateActionsFromResponse(aiResponse)
+      }
+      
+      setMessages((prev: ChatMessage[]) => [...prev, aiMessage])
+    } catch (error) {
+      console.error('Failed to get AI response:', error)
+      
+      // Fallback to mock response if the Lambda function fails
+      const mockResponse = generateAIResponse(userInput)
+      const fallbackMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: "I'm having trouble connecting to my AI services right now. Let me try to help you with a basic response.\n\n" + mockResponse.content,
+        timestamp: new Date(),
+        agent: mockResponse.agent,
+        actions: mockResponse.actions
+      }
+      
+      setMessages((prev: ChatMessage[]) => [...prev, fallbackMessage])
+    } finally {
+      setIsTyping(false)
+    }
   }
 
   const handleActionClick = (action: ChatAction) => {

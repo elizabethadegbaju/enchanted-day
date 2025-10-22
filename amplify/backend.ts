@@ -1,7 +1,7 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import { FunctionUrlAuthType, HttpMethod } from 'aws-cdk-lib/aws-lambda';
-import { Duration } from 'aws-cdk-lib';
+import { Duration, CfnOutput } from 'aws-cdk-lib';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { storage } from './storage/resource';
@@ -28,7 +28,7 @@ backend.chat.resources.lambda.addToRolePolicy(
 );
 
 // Add Function URL to make it accessible via HTTP
-backend.chat.resources.lambda.addFunctionUrl({
+const functionUrl = backend.chat.resources.lambda.addFunctionUrl({
   authType: FunctionUrlAuthType.NONE, // Allow public access
   cors: {
     allowCredentials: false,
@@ -37,4 +37,10 @@ backend.chat.resources.lambda.addFunctionUrl({
     allowedOrigins: ['*'],
     maxAge: Duration.days(1), // 24 hours
   },
+});
+
+// Export the Function URL
+new CfnOutput(backend.chat.stack, 'ChatFunctionUrl', {
+  value: functionUrl.url,
+  description: 'URL for the chat Lambda function',
 });

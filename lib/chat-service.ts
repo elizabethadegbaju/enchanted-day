@@ -1,6 +1,10 @@
 import { generateClient } from 'aws-amplify/data';
 import { Amplify } from 'aws-amplify';
 
+// Function URL for the chat Lambda function
+const CHAT_FUNCTION_URL = 'https://hernhoqiybuiqii5mdbanjfk7i0phxft.lambda-url.eu-central-1.on.aws/'; // Live URL
+//const CHAT_FUNCTION_URL = 'https://vemsd2ncob4thoqrvxay7jsede0vwjgf.lambda-url.eu-central-1.on.aws/'; // Sandbox URL
+
 interface ChatRequest {
   prompt: string;
   wedding_id?: string;
@@ -48,17 +52,8 @@ export class ChatService {
       // Get the current Amplify configuration
       const config = Amplify.getConfig();
 
-      // TODO: For now, we'll need to manually construct the function URL
-      // This will be available in amplify_outputs.json after deployment
-      const functionName = 'chat';
-      const region = config.Auth?.Cognito.userPoolClientId ? 
-        config.Auth.Cognito.userPoolId.split('_')[0] || 'eu-central-1' : 
-        'eu-central-1';
-
-      // TODO: This URL structure will need to be updated based on actual deployment
-      const functionUrl = `https://${functionName}.lambda-url.${region}.on.aws/`;
-      
-      const payload: ChatRequest = {
+      // Use the actual Function URL
+      const functionUrl = CHAT_FUNCTION_URL;      const payload: ChatRequest = {
         prompt,
         wedding_id: weddingId,
         type: 'chat'
@@ -89,11 +84,7 @@ export class ChatService {
    */
   static async streamGuestInquiry(guestId: string, inquiry: string, urgency: string = 'medium'): Promise<ReadableStream<Uint8Array>> {
     try {
-      const config = Amplify.getConfig();
-      const region = config.Auth?.Cognito.userPoolClientId ? 
-        config.Auth.Cognito.userPoolId.split('_')[0] || 'eu-central-1' : 
-        'eu-central-1';
-      const functionUrl = `https://chat.lambda-url.${region}.on.aws/`;
+      const functionUrl = CHAT_FUNCTION_URL;
       
       const payload: ChatRequest = {
         prompt: `Guest inquiry: ${inquiry}`,
@@ -215,11 +206,7 @@ export class ChatService {
    */
   static async streamWeddingChat(weddingId: string, message: string): Promise<ReadableStream<Uint8Array>> {
     try {
-      const config = Amplify.getConfig();
-      const region = config.Auth?.Cognito.userPoolClientId ? 
-        config.Auth.Cognito.userPoolId.split('_')[0] || 'eu-central-1' : 
-        'eu-central-1';
-      const functionUrl = `https://chat.lambda-url.${region}.on.aws/`;
+      const functionUrl = CHAT_FUNCTION_URL;
       
       const payload: ChatRequest = {
         prompt: message,
@@ -269,11 +256,7 @@ export class ChatService {
     type: string, 
     context?: Record<string, unknown>
   ): Promise<ChatResponse> {
-    const config = Amplify.getConfig();
-    const region = config.Auth?.Cognito.userPoolClientId ? 
-      config.Auth.Cognito.userPoolId.split('_')[0] || 'eu-central-1' : 
-      'eu-central-1';
-    const functionUrl = `https://chat.lambda-url.${region}.on.aws/`;
+    const functionUrl = CHAT_FUNCTION_URL;
     
     const payload: ChatRequest = {
       prompt,
