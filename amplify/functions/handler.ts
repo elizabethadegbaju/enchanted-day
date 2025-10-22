@@ -96,11 +96,20 @@ export const handler: Handler = async (event, context) => {
     const response = await client.send(command);
 
     if (isStreamingRequest) {
-      // For streaming requests, return Server-Sent Events format
-      const textResponse = response.response ? await response.response.transformToString() : "No response received";
-      
-      // Parse the streaming response and convert to SSE format
-      const streamingBody = convertToSSEFormat(textResponse);
+      // For streaming requests, we need to handle the response stream properly
+      if (!response.response) {
+        return {
+          statusCode: 500,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ error: 'No response stream received' }),
+        };
+      }
+
+      // Convert the response stream to Server-Sent Events format
+      const streamingBody = await convertBedrockStreamToSSE(response.response);
       
       return {
         statusCode: 200,
@@ -140,25 +149,92 @@ export const handler: Handler = async (event, context) => {
   }
 };
 
-function convertToSSEFormat(bedrockResponse: string): string {
-  // Parse the Bedrock response which comes in "data: content" format
-  const lines = bedrockResponse.split('\n').filter(line => line.trim());
+async function convertBedrockStreamToSSE(stream: any): Promise<string> {
   let sseOutput = '';
   
-  // Send start event
-  sseOutput += 'data: {"type":"start","agent":"EnchantedDay AI Assistant"}\n\n';
-  
-  for (const line of lines) {
-    if (line.startsWith('data: ')) {
-      const content = line.substring(6).replace(/"/g, ''); // Remove 'data: ' and quotes
-      if (content.trim()) {
-        sseOutput += `data: {"type":"content","content":"${content.replace(/"/g, '\\"')}"}\n\n`;
+  try {
+    // Send start event
+    sseOutput += 'data: {"type":"start","agent":"EnchantedDay AI Assistant"}\n\n';
+    
+    // Read the stream content
+    const fullResponse = await stream.transformToString();
+    const lines = fullResponse.split('\n').filter((line: string) => line.trim());
+    
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        let content = line.substring(6);
+        
+        // Remove quotes if present
+        if (content.startsWith('"') && content.endsWith('"')) {
+          content = content.slice(1, -1);
+        }
+        
+        if (content.trim()) {
+          // Process content to extract thinking and main content
+          const processedContent = processAIContent(content);
+          
+          if (processedContent.thinking) {
+            sseOutput += `data: {"type":"thinking","content":"${escapeJsonString(processedContent.thinking)}"}\n\n`;
+          }
+          
+          if (processedContent.content) {
+            // Split content into smaller chunks for better streaming effect
+            const chunks = splitIntoChunks(processedContent.content, 10); // ~10 words per chunk
+            
+            for (const chunk of chunks) {
+              sseOutput += `data: {"type":"content","content":"${escapeJsonString(chunk)}"}\n\n`;
+            }
+          }
+        }
       }
+    }
+    
+    // Send end event
+    sseOutput += 'data: {"type":"end"}\n\n';
+    
+    return sseOutput;
+  } catch (error) {
+    console.error('Error converting Bedrock stream to SSE:', error);
+    sseOutput += `data: {"type":"error","error":"Stream processing failed"}\n\n`;
+    return sseOutput;
+  }
+}
+
+function processAIContent(content: string): { thinking?: string; content?: string } {
+  const thinkingMatch = content.match(/<thinking>(.*?)<\/thinking>/s);
+  let thinking: string | undefined;
+  let mainContent = content;
+  
+  if (thinkingMatch) {
+    thinking = thinkingMatch[1].trim();
+    mainContent = content.replace(/<thinking>.*?<\/thinking>/s, '').trim();
+  }
+  
+  return {
+    thinking,
+    content: mainContent || undefined
+  };
+}
+
+function splitIntoChunks(text: string, wordsPerChunk: number = 10): string[] {
+  const words = text.split(' ');
+  const chunks: string[] = [];
+  
+  for (let i = 0; i < words.length; i += wordsPerChunk) {
+    const chunk = words.slice(i, i + wordsPerChunk).join(' ');
+    if (chunk.trim()) {
+      chunks.push(chunk + (i + wordsPerChunk < words.length ? ' ' : ''));
     }
   }
   
-  // Send end event
-  sseOutput += 'data: {"type":"end"}\n\n';
-  
-  return sseOutput;
+  return chunks;
+}
+
+function escapeJsonString(str: string): string {
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
 }

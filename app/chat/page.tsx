@@ -20,6 +20,8 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
+  Collapse,
+  useDisclosure,
 } from '@chakra-ui/react'
 import { 
   Send,
@@ -32,7 +34,10 @@ import {
   MoreVertical,
   Mic,
   Paperclip,
-  Heart
+  Heart,
+  Brain,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useAuthenticator } from '@aws-amplify/ui-react'
@@ -44,10 +49,12 @@ interface ChatMessage {
   id: string
   type: 'user' | 'ai' | 'system'
   content: string
+  thinking?: string
   timestamp: Date
   agent?: string
   actions?: ChatAction[]
   metadata?: Record<string, unknown>
+  isStreaming?: boolean
 }
 
 interface ChatAction {
@@ -67,6 +74,96 @@ const quickActions = [
   { icon: Settings, label: 'Crisis Check', action: 'crisis' },
   { icon: Sparkles, label: 'Cultural Help', action: 'cultural' },
 ]
+
+// Thinking Component
+function ThinkingSection({ thinking, isVisible }: { thinking: string; isVisible: boolean }) {
+  const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: false })
+  const bgColor = useColorModeValue('purple.50', 'purple.900')
+  const borderColor = useColorModeValue('purple.200', 'purple.600')
+
+  if (!thinking.trim() || !isVisible) return null
+
+  return (
+    <Box
+      bg={bgColor}
+      border="1px solid"
+      borderColor={borderColor}
+      borderRadius="md"
+      p={3}
+      mb={2}
+      fontSize="xs"
+    >
+      <HStack
+        onClick={onToggle}
+        cursor="pointer"
+        justify="space-between"
+        _hover={{ opacity: 0.8 }}
+      >
+        <HStack spacing={2}>
+          <Brain size={14} />
+          <Text fontWeight="medium" color="purple.600">
+            AI Thinking Process
+          </Text>
+        </HStack>
+        <IconButton
+          size="xs"
+          variant="ghost"
+          icon={isOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          aria-label="Toggle thinking"
+        />
+      </HStack>
+      
+      <Collapse in={isOpen} animateOpacity>
+        <Box mt={2} pt={2} borderTop="1px solid" borderColor={borderColor}>
+          <Text color="purple.700" fontStyle="italic" fontSize="xs">
+            {thinking}
+          </Text>
+        </Box>
+      </Collapse>
+    </Box>
+  )
+}
+
+// Markdown-like formatting component
+function FormattedText({ content }: { content: string }) {
+  const formatText = (text: string) => {
+    // Simple markdown-like formatting
+    return text
+      .split('\n')
+      .map((line, index) => {
+        let formattedLine = line
+        
+        // Bold text **text**
+        formattedLine = formattedLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        
+        // Bullet points
+        if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
+          return (
+            <Text key={index} as="li" ml={4} mb={1}>
+              <span dangerouslySetInnerHTML={{ __html: formattedLine.replace(/^[•-]\s*/, '') }} />
+            </Text>
+          )
+        }
+        
+        // Numbers (1., 2., etc.)
+        if (/^\d+\.\s/.test(line.trim())) {
+          return (
+            <Text key={index} as="li" ml={4} mb={1} style={{ listStyleType: 'decimal' }}>
+              <span dangerouslySetInnerHTML={{ __html: formattedLine.replace(/^\d+\.\s*/, '') }} />
+            </Text>
+          )
+        }
+        
+        return (
+          <Text key={index} mb={line.trim() ? 2 : 1}>
+            <span dangerouslySetInnerHTML={{ __html: formattedLine }} />
+          </Text>
+        )
+      })
+  }
+
+  return <Box>{formatText(content)}</Box>
+}
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -121,9 +218,11 @@ export default function ChatPage() {
         id: aiMessageId,
         type: 'ai',
         content: '',
+        thinking: '',
         timestamp: new Date(),
         agent: 'EnchantedDay AI Assistant',
-        actions: []
+        actions: [],
+        isStreaming: true
       }
       
       setMessages((prev: ChatMessage[]) => [...prev, aiMessage])
@@ -133,11 +232,24 @@ export default function ChatPage() {
       const reader = stream.getReader()
       
       let accumulatedContent = ''
+      let accumulatedThinking = ''
       
       for await (const chunk of parseChatStream(reader)) {
         if (chunk.type === 'start') {
           // Stream started
           continue
+        } else if (chunk.type === 'thinking') {
+          // Add thinking content
+          accumulatedThinking += chunk.content || ''
+          
+          // Update the AI message with thinking content
+          setMessages((prev: ChatMessage[]) => 
+            prev.map(msg => 
+              msg.id === aiMessageId 
+                ? { ...msg, thinking: accumulatedThinking }
+                : msg
+            )
+          )
         } else if (chunk.type === 'content') {
           // Add content chunk
           accumulatedContent += chunk.content || ''
@@ -151,12 +263,12 @@ export default function ChatPage() {
             )
           )
         } else if (chunk.type === 'end') {
-          // Stream ended - generate actions based on final content
+          // Stream ended - generate actions based on final content and mark as complete
           const actions = generateActionsFromResponse(accumulatedContent)
           setMessages((prev: ChatMessage[]) => 
             prev.map(msg => 
               msg.id === aiMessageId 
-                ? { ...msg, actions }
+                ? { ...msg, actions, isStreaming: false }
                 : msg
             )
           )
@@ -164,6 +276,13 @@ export default function ChatPage() {
         } else if (chunk.type === 'error') {
           console.error('Streaming error:', chunk.error)
           // Handle error - maybe show fallback
+          setMessages((prev: ChatMessage[]) => 
+            prev.map(msg => 
+              msg.id === aiMessageId 
+                ? { ...msg, content: 'Sorry, I encountered an error processing your request.', isStreaming: false }
+                : msg
+            )
+          )
           break
         }
       }
@@ -273,9 +392,11 @@ export default function ChatPage() {
         id: aiMessageId,
         type: 'ai',
         content: '',
+        thinking: '',
         timestamp: new Date(),
         agent: 'EnchantedDay AI Assistant',
-        actions: []
+        actions: [],
+        isStreaming: true
       }
       
       setMessages((prev: ChatMessage[]) => [...prev, initialAiMessage])
@@ -283,27 +404,53 @@ export default function ChatPage() {
 
       // Use streaming for real-time response
       const stream = await ChatService.streamMessage(userInput, selectedWeddingId || undefined)
-      let accumulatedContent = ''
-
       const reader = stream.getReader()
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        // Assuming value is a Uint8Array, decode it to string
-        const chunk = typeof value === 'string' ? value : new TextDecoder().decode(value)
-        accumulatedContent += chunk
-
-        setMessages((prev: ChatMessage[]) => 
-          prev.map(msg => 
-            msg.id === aiMessageId 
-              ? { 
-                  ...msg, 
-                  content: accumulatedContent,
-                  actions: generateActionsFromResponse(accumulatedContent)
-                }
-              : msg
+      
+      let accumulatedContent = ''
+      let accumulatedThinking = ''
+      
+      for await (const chunk of parseChatStream(reader)) {
+        if (chunk.type === 'start') {
+          continue
+        } else if (chunk.type === 'thinking') {
+          accumulatedThinking += chunk.content || ''
+          setMessages((prev: ChatMessage[]) => 
+            prev.map(msg => 
+              msg.id === aiMessageId 
+                ? { ...msg, thinking: accumulatedThinking }
+                : msg
+            )
           )
-        )
+        } else if (chunk.type === 'content') {
+          accumulatedContent += chunk.content || ''
+          setMessages((prev: ChatMessage[]) => 
+            prev.map(msg => 
+              msg.id === aiMessageId 
+                ? { ...msg, content: accumulatedContent }
+                : msg
+            )
+          )
+        } else if (chunk.type === 'end') {
+          const actions = generateActionsFromResponse(accumulatedContent)
+          setMessages((prev: ChatMessage[]) => 
+            prev.map(msg => 
+              msg.id === aiMessageId 
+                ? { ...msg, actions, isStreaming: false }
+                : msg
+            )
+          )
+          break
+        } else if (chunk.type === 'error') {
+          console.error('Streaming error:', chunk.error)
+          setMessages((prev: ChatMessage[]) => 
+            prev.map(msg => 
+              msg.id === aiMessageId 
+                ? { ...msg, content: 'Sorry, I encountered an error processing your request.', isStreaming: false }
+                : msg
+            )
+          )
+          break
+        }
       }
     } catch (error) {
       console.error('Failed to get AI response:', error)
@@ -441,15 +588,36 @@ export default function ChatPage() {
                       </Text>
                     )}
                     
+                    {/* Thinking Section for AI messages */}
+                    {message.type === 'ai' && (
+                      <ThinkingSection 
+                        thinking={message.thinking || ''} 
+                        isVisible={!!message.thinking?.trim()}
+                      />
+                    )}
+                    
                     <Card
                       bg={message.type === 'user' ? 'brand.500' : bgColor}
                       color={message.type === 'user' ? 'white' : 'inherit'}
                       variant={message.type === 'user' ? 'solid' : 'outline'}
                     >
                       <CardBody py={3} px={4}>
-                        <Text fontSize="sm" whiteSpace="pre-wrap">
-                          {message.content}
-                        </Text>
+                        {message.type === 'user' ? (
+                          <Text fontSize="sm" whiteSpace="pre-wrap">
+                            {message.content}
+                          </Text>
+                        ) : (
+                          <Box fontSize="sm">
+                            {message.isStreaming && !message.content.trim() ? (
+                              <HStack spacing={2}>
+                                <Spinner size="xs" />
+                                <Text color="neutral.600">AI is thinking...</Text>
+                              </HStack>
+                            ) : (
+                              <FormattedText content={message.content} />
+                            )}
+                          </Box>
+                        )}
                       </CardBody>
                     </Card>
 
