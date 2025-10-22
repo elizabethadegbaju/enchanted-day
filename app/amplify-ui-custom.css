@@ -74,12 +74,35 @@ button[data-amplify-button][data-variation="primary"] {
   background: var(--amplify-colors-background-primary);
   border-radius: var(--amplify-radii-large);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  padding: 2rem;
+  padding: 0;
   max-width: 400px;
   margin: 2rem auto;
+  overflow: hidden;
 }
 
-/* Button styling */
+/* Header area styling */
+[data-amplify-authenticator] [data-amplify-router-header] {
+  padding: 2rem 2rem 1rem 2rem;
+  background: linear-gradient(135deg, #fdf2f8 0%, #f8fafc 100%);
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* Content area styling */
+[data-amplify-authenticator] [data-amplify-router-content] {
+  padding: 1.5rem 2rem 1rem 2rem;
+}
+
+/* Footer area styling */
+[data-amplify-authenticator] [data-amplify-router-footer] {
+  padding: 0 2rem 1.5rem 2rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #fdf2f8 100%);
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Hide default header text to show our custom header */
+[data-amplify-authenticator] [data-amplify-router-header] h1 {
+  display: none;
+}
 [data-amplify-authenticator] button[data-variation="primary"] {
   background-color: #ec4899 !important;
   border-color: #ec4899 !important;

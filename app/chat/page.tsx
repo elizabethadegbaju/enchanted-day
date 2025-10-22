@@ -60,7 +60,7 @@ const quickActions = [
 ]
 
 // Component to render thinking section
-const ThinkingSection = ({ thinking }: { thinking: string }) => {
+const ThinkingSection = ({ thinking, isStreaming }: { thinking: string; isStreaming?: boolean }) => {
   const { isOpen, onToggle } = useDisclosure()
   
   return (
@@ -68,13 +68,13 @@ const ThinkingSection = ({ thinking }: { thinking: string }) => {
       <Button
         size="xs"
         variant="ghost"
-        leftIcon={<Brain size={12} />}
+        leftIcon={isStreaming ? <Spinner size="xs" /> : <Brain size={12} />}
         rightIcon={isOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         onClick={onToggle}
         colorScheme="blue"
         fontSize="xs"
       >
-        AI Thinking Process
+        {isStreaming ? 'AI Thinking...' : 'AI Thinking Process'}
       </Button>
       <Collapse in={isOpen} animateOpacity>
         <Box
@@ -99,7 +99,7 @@ const ThinkingSection = ({ thinking }: { thinking: string }) => {
 const MessageContent = ({ message }: { message: ChatMessage }) => {
   return (
     <Box>
-      {message.thinking && <ThinkingSection thinking={message.thinking} />}
+      {message.thinking && <ThinkingSection thinking={message.thinking} isStreaming={message.isStreaming} />}
       <Box fontSize="sm">
         <MarkdownRenderer content={message.content} />
       </Box>
@@ -158,7 +158,7 @@ export default function ChatPage() {
       type: 'ai',
       content: initialGreeting,
       timestamp: new Date(),
-      agent: 'Wedding Planning Assistant',
+      agent: 'EnchantedDay AI Assistant',
       actions: [
         { id: '1', label: 'Create Wedding', type: 'navigate', data: { path: '/wedding/create' } },
         { id: '2', label: 'View Dashboard', type: 'navigate', data: { path: '/dashboard' } },
@@ -166,7 +166,6 @@ export default function ChatPage() {
     }
   ])
   const [inputValue, setInputValue] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { user } = useAuthenticator()
   const { selectedWeddingId } = useWedding()
@@ -195,7 +194,6 @@ export default function ChatPage() {
     setMessages((prev: ChatMessage[]) => [...prev, userMessage])
     const currentInput = inputValue
     setInputValue('')
-    setIsTyping(true)
 
     try {
       // Create AI message placeholder for streaming
@@ -310,42 +308,42 @@ export default function ChatPage() {
       
       setMessages((prev: ChatMessage[]) => [...prev, fallbackMessage])
     } finally {
-      setIsTyping(false)
+      // Remove setIsTyping(false) since we're not using isTyping anymore
     }
   }
 
   const generateAIResponse = (userInput: string): { content: string; agent: string; actions: ChatAction[] } => {
     const input = userInput.toLowerCase()
     let response = "I understand you'd like help with that. Let me connect you with the right specialist agent!"
-    let agent = 'Wedding Planning Assistant'
+    let agent = 'EnchantedDay AI Assistant'
     let actions: ChatAction[] = [
       { id: '1', label: 'Create Wedding', type: 'navigate', data: { path: '/wedding/create' } },
       { id: '2', label: 'View Dashboard', type: 'navigate', data: { path: '/dashboard' } }
     ]
 
     if (input.includes('vendor')) {
-      agent = 'Vendor Management Agent'
+      agent = 'EnchantedDay AI Assistant'
       response = "I'm your Vendor Management Agent. I can help you find, coordinate, and manage all your wedding vendors. What specific vendor needs do you have?"
       actions = [
         { id: '1', label: 'Find Vendors', type: 'navigate', data: { path: '/vendors/search' } },
         { id: '2', label: 'Manage Vendors', type: 'navigate', data: { path: '/vendors' } }
       ]
     } else if (input.includes('timeline') || input.includes('schedule')) {
-      agent = 'Schedule Management Agent'
+      agent = 'EnchantedDay AI Assistant'
       response = "I'm your Schedule Management Agent. I can help you optimize your timeline, track deadlines, and resolve scheduling conflicts. What timeline assistance do you need?"
       actions = [
         { id: '1', label: 'View Timeline', type: 'navigate', data: { path: '/timeline' } },
         { id: '2', label: 'Check Deadlines', type: 'navigate', data: { path: '/timeline/deadlines' } }
       ]
     } else if (input.includes('budget')) {
-      agent = 'Budget Management Agent'
+      agent = 'EnchantedDay AI Assistant'
       response = "I'm your Budget Management Agent. I can help you track expenses, optimize spending, and stay within budget. What budget questions do you have?"
       actions = [
         { id: '1', label: 'View Budget', type: 'navigate', data: { path: '/budget' } },
         { id: '2', label: 'Track Expenses', type: 'navigate', data: { path: '/budget/expenses' } }
       ]
     } else if (input.includes('guest')) {
-      agent = 'Guest Experience Agent'
+      agent = 'EnchantedDay AI Assistant'
       response = "I'm your Guest Experience Agent. I can help you manage your guest list, track RSVPs, and coordinate guest experiences. How can I help with your guests?"
       actions = [
         { id: '1', label: 'Manage Guests', type: 'navigate', data: { path: '/guests' } },
@@ -367,7 +365,6 @@ export default function ChatPage() {
     }
 
     setMessages((prev: ChatMessage[]) => [...prev, userMessage])
-    setIsTyping(true)
 
     try {
       // Initialize the AI message for streaming
@@ -384,7 +381,6 @@ export default function ChatPage() {
       }
       
       setMessages((prev: ChatMessage[]) => [...prev, initialAiMessage])
-      setIsTyping(false)
 
       // Use streaming for real-time response
       const stream = await ChatService.streamMessage(userInput, selectedWeddingId || undefined)
@@ -474,7 +470,7 @@ export default function ChatPage() {
       
       setMessages((prev: ChatMessage[]) => [...prev, fallbackMessage])
     } finally {
-      setIsTyping(false)
+      // Remove setIsTyping(false) since we're not using isTyping anymore
     }
   }
 
@@ -608,7 +604,7 @@ export default function ChatPage() {
                           </Text>
                         ) : (
                           <Box fontSize="sm">
-                            {message.isStreaming && !message.content.trim() && !message.thinking ? (
+                            {message.isStreaming && !message.content.trim() && !message.thinking?.trim() ? (
                               <HStack spacing={2}>
                                 <Spinner size="xs" />
                                 <Text color="neutral.600">AI is thinking...</Text>
@@ -651,25 +647,7 @@ export default function ChatPage() {
                 </HStack>
               ))}
 
-              {isTyping && (
-                <HStack align="start" spacing={3}>
-                  <Avatar
-                    size="sm"
-                    bg="brand.500"
-                    icon={<Sparkles size={14} />}
-                  />
-                  <Card variant="outline">
-                    <CardBody py={3} px={4}>
-                      <HStack spacing={2}>
-                        <Spinner size="xs" />
-                        <Text fontSize="sm" color="neutral.600">
-                          AI is thinking...
-                        </Text>
-                      </HStack>
-                    </CardBody>
-                  </Card>
-                </HStack>
-              )}
+              {/* Remove this isTyping indicator since we handle thinking in streaming messages */}
 
               <div ref={messagesEndRef} />
             </VStack>

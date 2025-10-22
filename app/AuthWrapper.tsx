@@ -4,8 +4,57 @@ import React, { useState, useEffect } from "react";
 import { Authenticator } from "@aws-amplify/ui-react";
 import { UserProfileSetup } from "../components/user/UserProfileSetup";
 import { hasUserProfile } from "../lib/user-profile-service";
-import { Box, VStack, Spinner, Text, Center } from '@chakra-ui/react';
-import { Heart } from 'lucide-react';
+import { Box, VStack, Spinner, Text, Center, Heading, HStack } from '@chakra-ui/react';
+import { Heart, Sparkles } from 'lucide-react';
+
+// Custom Header Component for Authenticator
+function CustomHeader() {
+  return (
+    <Center py={6}>
+      <VStack spacing={3}>
+        <HStack spacing={2} align="center">
+          <Box position="relative">
+            <Heart size={32} color="#ec4899" fill="#ec4899" />
+            <Box
+              position="absolute"
+              top="-2px"
+              right="-2px"
+            >
+              <Sparkles size={12} color="#f9a8d4" />
+            </Box>
+          </Box>
+          <Heading
+            size="lg"
+            color="brand.600"
+            fontWeight="bold"
+            letterSpacing="tight"
+          >
+            EnchantedDay
+          </Heading>
+        </HStack>
+        <Text
+          fontSize="sm"
+          color="neutral.600"
+          textAlign="center"
+          maxW="280px"
+        >
+          Your AI-powered wedding planning companion
+        </Text>
+      </VStack>
+    </Center>
+  )
+}
+
+// Custom Footer Component for Authenticator
+function CustomFooter() {
+  return (
+    <Center py={4}>
+      <Text fontSize="xs" color="neutral.500" textAlign="center">
+        Start planning your magical day with AI assistance
+      </Text>
+    </Center>
+  )
+}
 
 function ProfileChecker({ children }: { children: React.ReactNode }) {
   const [showProfileSetup, setShowProfileSetup] = useState(false);
@@ -82,8 +131,17 @@ export default function AuthWrapper({
 }: {
   children: React.ReactNode;
 }) {
+  const components = {
+    Header() {
+      return <CustomHeader />
+    },
+    Footer() {
+      return <CustomFooter />
+    }
+  }
+
   return (
-    <Authenticator>
+    <Authenticator components={components}>
       <ProfileChecker>
         {children}
       </ProfileChecker>
