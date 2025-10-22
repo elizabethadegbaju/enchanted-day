@@ -204,14 +204,28 @@ function FormattedText({ content }: { content: string }) {
         }
         
         return (
-          <Text key={index} mb={line.trim() ? 2 : 1}>
+          <Text key={index} mb={1}>
             <span dangerouslySetInnerHTML={{ __html: formattedLine }} />
           </Text>
         )
       })
   }
 
-  return <Box>{formatText(content)}</Box>
+  return <VStack align="start" spacing={1}>{formatText(content)}</VStack>
+}
+
+// Helper function to parse thinking content from agent response
+function parseThinkingContent(content: string): { thinking: string; cleanContent: string } {
+  // Look for thinking tags in the content (using dotall alternative)
+  const thinkingMatch = content.match(/<thinking>([\s\S]*?)<\/thinking>/)
+  
+  if (thinkingMatch) {
+    const thinking = thinkingMatch[1].trim()
+    const cleanContent = content.replace(/<thinking>[\s\S]*?<\/thinking>\s*/g, '').trim()
+    return { thinking, cleanContent }
+  }
+  
+  return { thinking: '', cleanContent: content }
 }
 
 export default function ChatPage() {
@@ -303,21 +317,42 @@ export default function ChatPage() {
           // Add content chunk
           accumulatedContent += chunk.content || ''
           
-          // Update the AI message with accumulated content
+          // Parse thinking content from accumulated content
+          const { thinking, cleanContent } = parseThinkingContent(accumulatedContent)
+          
+          // Update accumulated thinking if found
+          if (thinking && thinking !== accumulatedThinking) {
+            accumulatedThinking = thinking
+          }
+          
+          // Update the AI message with parsed content and thinking
           setMessages((prev: ChatMessage[]) => 
             prev.map(msg => 
               msg.id === aiMessageId 
-                ? { ...msg, content: accumulatedContent }
+                ? { 
+                    ...msg, 
+                    content: cleanContent,
+                    thinking: accumulatedThinking
+                  }
                 : msg
             )
           )
         } else if (chunk.type === 'end') {
-          // Stream ended - generate actions based on final content and mark as complete
-          const actions = generateActionsFromResponse(accumulatedContent)
+          // Parse final content to ensure thinking is separated
+          const { thinking, cleanContent } = parseThinkingContent(accumulatedContent)
+          
+          // Stream ended - generate actions based on final clean content and mark as complete
+          const actions = generateActionsFromResponse(cleanContent)
           setMessages((prev: ChatMessage[]) => 
             prev.map(msg => 
               msg.id === aiMessageId 
-                ? { ...msg, actions, isStreaming: false }
+                ? { 
+                    ...msg, 
+                    content: cleanContent,
+                    thinking: thinking || accumulatedThinking,
+                    actions, 
+                    isStreaming: false 
+                  }
                 : msg
             )
           )
@@ -472,19 +507,41 @@ export default function ChatPage() {
           )
         } else if (chunk.type === 'content') {
           accumulatedContent += chunk.content || ''
+          
+          // Parse thinking content from accumulated content
+          const { thinking, cleanContent } = parseThinkingContent(accumulatedContent)
+          
+          // Update accumulated thinking if found
+          if (thinking && thinking !== accumulatedThinking) {
+            accumulatedThinking = thinking
+          }
+          
           setMessages((prev: ChatMessage[]) => 
             prev.map(msg => 
               msg.id === aiMessageId 
-                ? { ...msg, content: accumulatedContent }
+                ? { 
+                    ...msg, 
+                    content: cleanContent,
+                    thinking: accumulatedThinking
+                  }
                 : msg
             )
           )
         } else if (chunk.type === 'end') {
-          const actions = generateActionsFromResponse(accumulatedContent)
+          // Parse final content to ensure thinking is separated
+          const { thinking, cleanContent } = parseThinkingContent(accumulatedContent)
+          
+          const actions = generateActionsFromResponse(cleanContent)
           setMessages((prev: ChatMessage[]) => 
             prev.map(msg => 
               msg.id === aiMessageId 
-                ? { ...msg, actions, isStreaming: false }
+                ? { 
+                    ...msg, 
+                    content: cleanContent,
+                    thinking: thinking || accumulatedThinking,
+                    actions, 
+                    isStreaming: false 
+                  }
                 : msg
             )
           )
