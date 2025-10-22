@@ -8,5 +8,9 @@ export const chat = defineFunction({
   },
   environment: {
     // Add any environment variables needed
-  }
+  },
+  // Add runtime configuration
+  runtime: 20,
+  timeoutSeconds: 60,
+  memoryMB: 512
 });
