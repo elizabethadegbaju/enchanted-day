@@ -285,9 +285,14 @@ export default function ChatPage() {
       const stream = await ChatService.streamMessage(userInput, selectedWeddingId || undefined)
       let accumulatedContent = ''
 
-      for await (const chunk of stream) {
+      const reader = stream.getReader()
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        // Assuming value is a Uint8Array, decode it to string
+        const chunk = typeof value === 'string' ? value : new TextDecoder().decode(value)
         accumulatedContent += chunk
-        
+
         setMessages((prev: ChatMessage[]) => 
           prev.map(msg => 
             msg.id === aiMessageId 
