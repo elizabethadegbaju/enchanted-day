@@ -7,12 +7,12 @@ import { Handler } from "aws-lambda";
 export const handler: Handler = async (event, context) => {
   try {
     // Handle CORS preflight requests
-    if (event.httpMethod === 'OPTIONS') {
+    if (event.requestContext?.http?.method === 'OPTIONS') {
       return {
         statusCode: 200,
         headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Headers': 'Content-Type, X-Amz-Date, Authorization, X-Api-Key',
           'Access-Control-Allow-Methods': 'POST, OPTIONS'
         },
         body: ''
