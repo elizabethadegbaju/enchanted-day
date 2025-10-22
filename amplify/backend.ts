@@ -30,13 +30,7 @@ backend.chat.resources.lambda.addToRolePolicy(
 // Add Function URL to make it accessible via HTTP
 const functionUrl = backend.chat.resources.lambda.addFunctionUrl({
   authType: FunctionUrlAuthType.NONE, // Allow public access
-  cors: {
-    allowCredentials: false,
-    allowedHeaders: ['Content-Type', 'X-Amz-Date', 'Authorization', 'X-Api-Key'],
-    allowedMethods: [HttpMethod.POST],
-    allowedOrigins: ['*'],
-    maxAge: Duration.days(1), // 24 hours
-  },
+  // Remove CORS configuration here since we're handling it in the function
 });
 
 // Export the Function URL

@@ -5,16 +5,20 @@ import {
 import { Handler } from "aws-lambda";
 
 export const handler: Handler = async (event, context) => {
+  // Common CORS headers to use across all responses
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': 'https://main.d1ujq8601qbdi5.amplifyapp.com',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Amz-Date, Authorization, X-Api-Key, x-amz-user-agent',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+    'Access-Control-Max-Age': '86400'
+  };
+
   try {
     // Handle CORS preflight requests
     if (event.requestContext?.http?.method === 'OPTIONS') {
       return {
         statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'Content-Type, X-Amz-Date, Authorization, X-Api-Key',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS'
-        },
+        headers: corsHeaders,
         body: ''
       };
     }
@@ -27,7 +31,7 @@ export const handler: Handler = async (event, context) => {
       return {
         statusCode: 400,
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          ...corsHeaders,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ error: 'Invalid JSON in request body' }),
@@ -73,7 +77,7 @@ export const handler: Handler = async (event, context) => {
       return {
         statusCode: 400,
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          ...corsHeaders,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ error: 'Prompt is required' }),
@@ -101,7 +105,7 @@ export const handler: Handler = async (event, context) => {
       return {
         statusCode: 200,
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          ...corsHeaders,
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
           'Connection': 'keep-alive'
@@ -115,7 +119,7 @@ export const handler: Handler = async (event, context) => {
       return {
         statusCode: 200,
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          ...corsHeaders,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ response: textResponse }),
@@ -126,7 +130,7 @@ export const handler: Handler = async (event, context) => {
     return {
       statusCode: 500,
       headers: {
-        'Access-Control-Allow-Origin': '*',
+        ...corsHeaders,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ 
