@@ -12,6 +12,7 @@ import {
 } from '@chakra-ui/react';
 import { Send, MessageCircle } from 'lucide-react';
 import { ChatService, parseStrandsStream } from '@/lib/chat-service';
+import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 
 interface GuestInquiryChatProps {
   guestId: string;
@@ -176,7 +177,11 @@ export const GuestInquiryChat: React.FC<GuestInquiryChatProps> = ({
               borderBottomRightRadius={message.type === 'user' ? 'sm' : 'lg'}
               borderBottomLeftRadius={message.type === 'user' ? 'lg' : 'sm'}
             >
-              <Text fontSize="sm">{message.content}</Text>
+              {message.type === 'ai' ? (
+                <MarkdownRenderer content={message.content} />
+              ) : (
+                <Text fontSize="sm">{message.content}</Text>
+              )}
               {message.workflowStep && (
                 <Badge size="sm" mt={1} colorScheme="green">
                   AI Response

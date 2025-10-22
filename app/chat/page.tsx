@@ -41,8 +41,8 @@ import {
 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useAuthenticator } from '@aws-amplify/ui-react'
-import ReactMarkdown from 'react-markdown'
 import { amplifyDataClient } from '@/lib/amplify-client'
+import { MarkdownRenderer } from '@/components/common/MarkdownRenderer'
 import { ChatService, parseChatStream } from '@/lib/chat-service'
 import { useWedding } from '@/contexts/WeddingContext'
 import { handleStreamingChat, generateActionsFromResponse, ChatMessage, ChatAction } from '@/lib/streaming-utils'
@@ -88,7 +88,7 @@ const ThinkingSection = ({ thinking }: { thinking: string }) => {
           color="blue.800"
           fontStyle="italic"
         >
-          <ReactMarkdown>{thinking}</ReactMarkdown>
+          <MarkdownRenderer content={thinking} />
         </Box>
       </Collapse>
     </Box>
@@ -101,7 +101,7 @@ const MessageContent = ({ message }: { message: ChatMessage }) => {
     <Box>
       {message.thinking && <ThinkingSection thinking={message.thinking} />}
       <Box fontSize="sm">
-        <ReactMarkdown>{message.content}</ReactMarkdown>
+        <MarkdownRenderer content={message.content} />
       </Box>
     </Box>
   )

@@ -23,6 +23,34 @@ function parseThinkingContent(content: string): { thinking: string; content: str
   return { thinking, content: cleanContent };
 }
 
+function formatResponseText(text: string): string {
+  // Clean up escaped characters and normalize text
+  let formatted = text
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .replace(/\\t/g, '\t')
+    .replace(/\\"/g, '"')
+    .replace(/\\'/g, "'");
+
+  // Add proper line breaks after sentences
+  formatted = formatted
+    .replace(/\. ([A-Z])/g, '.\n\n$1')
+    .replace(/\? ([A-Z])/g, '?\n\n$1')
+    .replace(/! ([A-Z])/g, '!\n\n$1');
+
+  // Format numbered lists
+  formatted = formatted.replace(/(\d+\.)\s/g, '\n$1 ');
+
+  // Format bullet points
+  formatted = formatted.replace(/- ([^\n])/g, '\n• $1');
+
+  // Clean up multiple newlines
+  formatted = formatted.replace(/\n{3,}/g, '\n\n');
+
+  // Trim whitespace
+  return formatted.trim();
+}
+
 function escapeJsonString(str: string): string {
   return str
     .replace(/\\/g, '\\\\')
@@ -164,7 +192,8 @@ export const handler: Handler = async (event, context) => {
       };
     } else {
       // For non-streaming requests, return JSON as before
-      const textResponse = response.response ? await response.response.transformToString() : "No response received";
+      const rawResponse = response.response ? await response.response.transformToString() : "No response received";
+      const formattedResponse = formatResponseText(rawResponse);
       
       return {
         statusCode: 200,
@@ -172,7 +201,7 @@ export const handler: Handler = async (event, context) => {
           ...corsHeaders,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ response: textResponse }),
+        body: JSON.stringify({ response: formattedResponse }),
       };
     }
   } catch (error) {
@@ -219,8 +248,9 @@ async function convertBedrockStreamToSSE(stream: any): Promise<string> {
           }
           
           if (processedContent.content) {
-            // Split content into smaller chunks for better streaming effect
-            const chunks = splitIntoChunks(processedContent.content, 10); // ~10 words per chunk
+            // Format the content before chunking
+            const formattedContent = formatResponseText(processedContent.content);
+            const chunks = splitIntoChunks(formattedContent, 10); // ~10 words per chunk
             
             for (const chunk of chunks) {
               sseOutput += `data: {"type":"content","content":"${escapeJsonString(chunk)}"}\n\n`;
