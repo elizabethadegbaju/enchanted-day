@@ -37,7 +37,10 @@ import {
   AlertTriangle,
   Target,
   Activity,
-  Plus
+  Plus,
+  Sparkles,
+  MessageCircle,
+  Camera
 } from 'lucide-react'
 import { getTimelineData, createMilestone, createTask, type TimelineData } from '@/lib/wedding-data-service'
 import { 
@@ -180,36 +183,69 @@ export default function TimelinePage() {
     
     return (
       <DashboardLayout>
-        <VStack spacing={6} align="center" py={12}>
-          <Alert status={isNoWeddingsError ? "info" : "error"} maxW="md">
-            <AlertIcon />
-            <VStack spacing={2} align="start">
-              <AlertTitle>
-                {isNoWeddingsError ? "No Wedding Found" : "Unable to load timeline!"}
-              </AlertTitle>
-              <AlertDescription>
-                {isNoWeddingsError 
-                  ? "Please create a wedding first to view your timeline."
-                  : error
-                }
-              </AlertDescription>
-            </VStack>
-          </Alert>
-          
+        <VStack spacing={8} align="center" justify="center" minH="400px">
           {isNoWeddingsError ? (
-            <Button 
-              as="a" 
-              href="/wedding/create" 
-              colorScheme="brand" 
-              size="lg"
-              leftIcon={<Plus />}
-            >
-              Create Your Wedding
-            </Button>
+            <>
+              <VStack spacing={4} textAlign="center">
+                <Box>
+                  <Sparkles size={64} color="var(--chakra-colors-brand-500)" />
+                </Box>
+                <VStack spacing={2}>
+                  <Text fontSize="2xl" fontWeight="bold" color="brand.600">
+                    Welcome to Your AI Wedding Planner!
+                  </Text>
+                  <Text fontSize="lg" color="neutral.600" maxW="2xl">
+                    Let's start planning your magical day. Our AI assistant is here to help you every step of the way.
+                  </Text>
+                </VStack>
+              </VStack>
+
+              <VStack spacing={4} w="full" maxW="md">
+                <Button
+                  leftIcon={<Plus size={20} />}
+                  colorScheme="brand"
+                  size="lg"
+                  w="full"
+                  h="auto"
+                  py={4}
+                  onClick={() => window.location.href = '/wedding/create'}
+                >
+                  <VStack spacing={1}>
+                    <Text fontSize="md" fontWeight="semibold">Create Your Wedding</Text>
+                    <Text fontSize="sm" opacity={0.9}>Set up your special day details</Text>
+                  </VStack>
+                </Button>
+                
+                <Button
+                  leftIcon={<MessageCircle size={20} />}
+                  variant="outline"
+                  colorScheme="brand"
+                  size="lg"
+                  w="full"
+                  h="auto"
+                  py={4}
+                  onClick={() => window.location.href = '/chat'}
+                >
+                  <VStack spacing={1}>
+                    <Text fontSize="md" fontWeight="semibold">Chat with AI Assistant</Text>
+                    <Text fontSize="sm" color="neutral.600">Get instant planning help</Text>
+                  </VStack>
+                </Button>
+              </VStack>
+            </>
           ) : (
-            <Button onClick={loadTimelineData} colorScheme="brand">
-              Retry
-            </Button>
+            <>
+              <Alert status="error" maxW="md">
+                <AlertIcon />
+                <Box>
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Box>
+              </Alert>
+              <Button onClick={loadTimelineData} colorScheme="brand">
+                Retry
+              </Button>
+            </>
           )}
         </VStack>
       </DashboardLayout>

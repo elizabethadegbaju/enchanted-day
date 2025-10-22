@@ -35,6 +35,7 @@ import {
 } from 'lucide-react'
 import { WeddingSelector } from '@/components/wedding/WeddingSelector'
 import { UserDisplayName } from '@/components/user/UserDisplayName'
+import { useWedding } from '@/contexts/WeddingContext'
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -58,8 +59,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   breadcrumbs = [],
 }) => {
   const { user, signOut } = useAuthenticator()
+  const { weddings } = useWedding()
   const bgColor = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('neutral.200', 'gray.700')
+
+  // Show sidebar only if user has more than one wedding
+  const showSidebar = weddings.length > 1
 
   return (
     <Box minH="100vh" bg="neutral.50">
@@ -140,18 +145,25 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
       {/* Main Content */}
       <Container maxW="7xl" py={8}>
-        <Grid templateColumns={{ base: '1fr', lg: '250px 1fr' }} gap={8}>
-          {/* Sidebar */}
-          <VStack align="stretch" spacing={4} display={{ base: 'none', lg: 'flex' }}>
-            <WeddingSelector />
-          </VStack>
+        <Grid 
+          templateColumns={showSidebar ? { base: '1fr', lg: '250px 1fr' } : '1fr'} 
+          gap={8}
+        >
+          {/* Sidebar - only show if user has multiple weddings */}
+          {showSidebar && (
+            <VStack align="stretch" spacing={4} display={{ base: 'none', lg: 'flex' }}>
+              <WeddingSelector />
+            </VStack>
+          )}
 
           {/* Main Content Area */}
           <VStack align="stretch" spacing={6}>
-            {/* Mobile Wedding Selector */}
-            <Box display={{ base: 'block', lg: 'none' }}>
-              <WeddingSelector />
-            </Box>
+            {/* Mobile Wedding Selector - only show if user has multiple weddings */}
+            {showSidebar && (
+              <Box display={{ base: 'block', lg: 'none' }}>
+                <WeddingSelector />
+              </Box>
+            )}
 
             {/* Breadcrumbs and Title */}
             {(breadcrumbs.length > 0 || title) && (

@@ -201,13 +201,21 @@ async function convertBedrockStreamToSSE(stream: any): Promise<string> {
 }
 
 function processAIContent(content: string): { thinking?: string; content?: string } {
-  const thinkingMatch = content.match(/<thinking>(.*?)<\/thinking>/s);
+  // Extract all thinking blocks
+  const thinkingRegex = /<thinking>(.*?)<\/thinking>/gs;
+  const thinkingMatches = content.match(thinkingRegex);
+  
   let thinking: string | undefined;
   let mainContent = content;
   
-  if (thinkingMatch) {
-    thinking = thinkingMatch[1].trim();
-    mainContent = content.replace(/<thinking>.*?<\/thinking>/s, '').trim();
+  if (thinkingMatches) {
+    // Combine all thinking content
+    thinking = thinkingMatches
+      .map(match => match.replace(/<\/?thinking>/g, '').trim())
+      .join(' ');
+    
+    // Remove all thinking blocks from main content
+    mainContent = content.replace(thinkingRegex, '').trim();
   }
   
   return {

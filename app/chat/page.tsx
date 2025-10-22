@@ -36,11 +36,12 @@ import {
   Paperclip,
   Heart,
   Brain,
-  ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useAuthenticator } from '@aws-amplify/ui-react'
+import ReactMarkdown from 'react-markdown'
 import { amplifyDataClient } from '@/lib/amplify-client'
 import { ChatService, parseChatStream } from '@/lib/chat-service'
 import { useWedding } from '@/contexts/WeddingContext'
@@ -50,11 +51,11 @@ interface ChatMessage {
   type: 'user' | 'ai' | 'system'
   content: string
   thinking?: string
+  isStreaming?: boolean
   timestamp: Date
   agent?: string
   actions?: ChatAction[]
   metadata?: Record<string, unknown>
-  isStreaming?: boolean
 }
 
 interface ChatAction {
@@ -75,8 +76,56 @@ const quickActions = [
   { icon: Sparkles, label: 'Cultural Help', action: 'cultural' },
 ]
 
-// Thinking Component
-function ThinkingSection({ thinking, isVisible }: { thinking: string; isVisible: boolean }) {
+// Component to render thinking section
+const ThinkingSection = ({ thinking }: { thinking: string }) => {
+  const { isOpen, onToggle } = useDisclosure()
+  
+  return (
+    <Box mb={3}>
+      <Button
+        size="xs"
+        variant="ghost"
+        leftIcon={<Brain size={12} />}
+        rightIcon={isOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+        onClick={onToggle}
+        colorScheme="blue"
+        fontSize="xs"
+      >
+        AI Thinking Process
+      </Button>
+      <Collapse in={isOpen} animateOpacity>
+        <Box
+          mt={2}
+          p={3}
+          bg="blue.50"
+          border="1px solid"
+          borderColor="blue.200"
+          borderRadius="md"
+          fontSize="sm"
+          color="blue.800"
+          fontStyle="italic"
+        >
+          <ReactMarkdown>{thinking}</ReactMarkdown>
+        </Box>
+      </Collapse>
+    </Box>
+  )
+}
+
+// Component to render message content with markdown
+const MessageContent = ({ message }: { message: ChatMessage }) => {
+  return (
+    <Box>
+      {message.thinking && <ThinkingSection thinking={message.thinking} />}
+      <Box fontSize="sm">
+        <ReactMarkdown>{message.content}</ReactMarkdown>
+      </Box>
+    </Box>
+  )
+}
+
+// Thinking Component for AI messages with visibility control
+function AIThinkingDisplay({ thinking, isVisible }: { thinking: string; isVisible: boolean }) {
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: false })
   const bgColor = useColorModeValue('purple.50', 'purple.900')
   const borderColor = useColorModeValue('purple.200', 'purple.600')
@@ -240,7 +289,7 @@ export default function ChatPage() {
           continue
         } else if (chunk.type === 'thinking') {
           // Add thinking content
-          accumulatedThinking += chunk.content || ''
+          accumulatedThinking = chunk.thinking || chunk.content || ''
           
           // Update the AI message with thinking content
           setMessages((prev: ChatMessage[]) => 
@@ -413,7 +462,7 @@ export default function ChatPage() {
         if (chunk.type === 'start') {
           continue
         } else if (chunk.type === 'thinking') {
-          accumulatedThinking += chunk.content || ''
+          accumulatedThinking = chunk.thinking || chunk.content || ''
           setMessages((prev: ChatMessage[]) => 
             prev.map(msg => 
               msg.id === aiMessageId 
@@ -590,7 +639,7 @@ export default function ChatPage() {
                     
                     {/* Thinking Section for AI messages */}
                     {message.type === 'ai' && (
-                      <ThinkingSection 
+                      <AIThinkingDisplay 
                         thinking={message.thinking || ''} 
                         isVisible={!!message.thinking?.trim()}
                       />
@@ -608,13 +657,13 @@ export default function ChatPage() {
                           </Text>
                         ) : (
                           <Box fontSize="sm">
-                            {message.isStreaming && !message.content.trim() ? (
+                            {message.isStreaming && !message.content.trim() && !message.thinking ? (
                               <HStack spacing={2}>
                                 <Spinner size="xs" />
                                 <Text color="neutral.600">AI is thinking...</Text>
                               </HStack>
                             ) : (
-                              <FormattedText content={message.content} />
+                              <MessageContent message={message} />
                             )}
                           </Box>
                         )}

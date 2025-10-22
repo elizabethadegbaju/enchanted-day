@@ -30,7 +30,10 @@ import {
   Users, 
   DollarSign, 
   CheckCircle, 
-  Plus
+  Plus,
+  MessageCircle,
+  Camera,
+  Sparkles
 } from 'lucide-react'
 import { getDashboardData, type DashboardData } from '@/lib/wedding-data-service'
 import { formatDateForDisplay, getDaysUntilDate } from '@/lib/data-utils'
@@ -38,7 +41,7 @@ import { useWedding } from '@/contexts/WeddingContext'
 import type { Wedding } from '@/types'
 
 export default function DashboardPage() {
-  const { selectedWeddingId, isLoading: weddingLoading } = useWedding();
+  const { selectedWeddingId, isLoading: weddingLoading, weddings } = useWedding();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -47,8 +50,15 @@ export default function DashboardPage() {
   const borderColor = useColorModeValue('gray.200', 'gray.600')
 
   useEffect(() => {
-    if (selectedWeddingId && !weddingLoading) {
-      loadDashboardData()
+    // When wedding context finishes loading
+    if (!weddingLoading) {
+      if (selectedWeddingId) {
+        // User has weddings, load dashboard data
+        loadDashboardData()
+      } else {
+        // User has no weddings, stop loading immediately
+        setLoading(false)
+      }
     }
   }, [selectedWeddingId, weddingLoading])
 
@@ -96,19 +106,54 @@ export default function DashboardPage() {
 
   if (!selectedWeddingId) {
     return (
-      <DashboardLayout title="Wedding Overview">
+      <DashboardLayout title="Welcome to EnchantedDay">
         <VStack spacing={8} align="center" justify="center" minH="400px">
-          <Text fontSize="xl" textAlign="center">
-            Please select a wedding to view the dashboard
-          </Text>
-          <Button
-            leftIcon={<Plus size={16} />}
-            colorScheme="brand"
-            size="lg"
-            onClick={() => window.location.href = '/wedding/create'}
-          >
-            Create Your First Wedding
-          </Button>
+          <VStack spacing={4} textAlign="center">
+            <Box>
+              <Sparkles size={64} color="var(--chakra-colors-brand-500)" />
+            </Box>
+            <VStack spacing={2}>
+              <Text fontSize="2xl" fontWeight="bold" color="brand.600">
+                Welcome to Your AI Wedding Planner!
+              </Text>
+              <Text fontSize="lg" color="neutral.600" maxW="2xl">
+                Let's start planning your magical day. Our AI assistant is here to help you every step of the way.
+              </Text>
+            </VStack>
+          </VStack>
+
+          <VStack spacing={4} w="full" maxW="md">
+            <Button
+              leftIcon={<Plus size={20} />}
+              colorScheme="brand"
+              size="lg"
+              w="full"
+              h="auto"
+              py={4}
+              onClick={() => window.location.href = '/wedding/create'}
+            >
+              <VStack spacing={1}>
+                <Text fontSize="md" fontWeight="semibold">Create Your Wedding</Text>
+                <Text fontSize="sm" opacity={0.9}>Set up your special day details</Text>
+              </VStack>
+            </Button>
+            
+            <Button
+              leftIcon={<MessageCircle size={20} />}
+              variant="outline"
+              colorScheme="brand"
+              size="lg"
+              w="full"
+              h="auto"
+              py={4}
+              onClick={() => window.location.href = '/chat'}
+            >
+              <VStack spacing={1}>
+                <Text fontSize="md" fontWeight="semibold">Chat with AI Assistant</Text>
+                <Text fontSize="sm" color="neutral.600">Get instant planning help</Text>
+              </VStack>
+            </Button>
+          </VStack>
         </VStack>
       </DashboardLayout>
     )
@@ -118,37 +163,70 @@ export default function DashboardPage() {
     const isNoWeddingsError = error.includes('No weddings found')
     
     return (
-      <DashboardLayout title="Wedding Overview">
-        <VStack spacing={6} align="center" py={12}>
-          <Alert status={isNoWeddingsError ? "info" : "error"} maxW="md">
-            <AlertIcon />
-            <Box>
-              <AlertTitle>
-                {isNoWeddingsError ? "Welcome to Enchanted Day!" : "Error"}
-              </AlertTitle>
-              <AlertDescription>
-                {isNoWeddingsError 
-                  ? "Let's create your first wedding to get started planning your special day."
-                  : error
-                }
-              </AlertDescription>
-            </Box>
-          </Alert>
-          
+      <DashboardLayout title="Welcome to EnchantedDay">
+        <VStack spacing={8} align="center" justify="center" minH="400px">
           {isNoWeddingsError ? (
-            <Button 
-              as="a" 
-              href="/wedding/create" 
-              colorScheme="brand" 
-              size="lg"
-              leftIcon={<Plus />}
-            >
-              Create Your Wedding
-            </Button>
+            <>
+              <VStack spacing={4} textAlign="center">
+                <Box>
+                  <Sparkles size={64} color="var(--chakra-colors-brand-500)" />
+                </Box>
+                <VStack spacing={2}>
+                  <Text fontSize="2xl" fontWeight="bold" color="brand.600">
+                    Welcome to Your AI Wedding Planner! ✨
+                  </Text>
+                  <Text fontSize="lg" color="neutral.600" maxW="2xl">
+                    Let's start planning your magical day. Our AI assistant is here to help you every step of the way.
+                  </Text>
+                </VStack>
+              </VStack>
+
+              <VStack spacing={4} w="full" maxW="md">
+                <Button
+                  leftIcon={<Plus size={20} />}
+                  colorScheme="brand"
+                  size="lg"
+                  w="full"
+                  h="auto"
+                  py={4}
+                  onClick={() => window.location.href = '/wedding/create'}
+                >
+                  <VStack spacing={1}>
+                    <Text fontSize="md" fontWeight="semibold">Create Your Wedding</Text>
+                    <Text fontSize="sm" opacity={0.9}>Set up your special day details</Text>
+                  </VStack>
+                </Button>
+                
+                <Button
+                  leftIcon={<MessageCircle size={20} />}
+                  variant="outline"
+                  colorScheme="brand"
+                  size="lg"
+                  w="full"
+                  h="auto"
+                  py={4}
+                  onClick={() => window.location.href = '/chat'}
+                >
+                  <VStack spacing={1}>
+                    <Text fontSize="md" fontWeight="semibold">Chat with AI Assistant</Text>
+                    <Text fontSize="sm" color="neutral.600">Get instant planning help</Text>
+                  </VStack>
+                </Button>
+              </VStack>
+            </>
           ) : (
-            <Button onClick={loadDashboardData} colorScheme="brand">
-              Retry
-            </Button>
+            <>
+              <Alert status="error" maxW="md">
+                <AlertIcon />
+                <Box>
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Box>
+              </Alert>
+              <Button onClick={loadDashboardData} colorScheme="brand">
+                Retry
+              </Button>
+            </>
           )}
         </VStack>
       </DashboardLayout>
@@ -159,20 +237,68 @@ export default function DashboardPage() {
     return (
       <DashboardLayout title="Welcome to EnchantedDay">
         <VStack spacing={8} align="center" justify="center" minH="400px">
-          <Text fontSize="xl" textAlign="center">
-            Welcome to your AI-powered wedding planning journey!
-          </Text>
-          <Text color="neutral.600" textAlign="center">
-            Get started by creating your first wedding.
-          </Text>
-          <Button
-            leftIcon={<Plus size={16} />}
-            colorScheme="brand"
-            size="lg"
-            onClick={() => window.location.href = '/wedding/create'}
-          >
-            Create Your Wedding
-          </Button>
+          <VStack spacing={4} textAlign="center">
+            <Box>
+              <Sparkles size={64} color="var(--chakra-colors-brand-500)" />
+            </Box>
+            <VStack spacing={2}>
+              <Text fontSize="2xl" fontWeight="bold" color="brand.600">
+                Welcome to Your AI Wedding Planner! ✨
+              </Text>
+              <Text fontSize="lg" color="neutral.600" maxW="2xl">
+                Let's start planning your magical day. Our AI assistant is here to help you every step of the way.
+              </Text>
+            </VStack>
+          </VStack>
+
+          <VStack spacing={4} w="full" maxW="md">
+            <Button
+              leftIcon={<Plus size={20} />}
+              colorScheme="brand"
+              size="lg"
+              w="full"
+              h="auto"
+              py={4}
+              onClick={() => window.location.href = '/wedding/create'}
+            >
+              <VStack spacing={1}>
+                <Text fontSize="md" fontWeight="semibold">Create Your Wedding</Text>
+                <Text fontSize="sm" opacity={0.9}>Set up your special day details</Text>
+              </VStack>
+            </Button>
+            
+            <Button
+              leftIcon={<MessageCircle size={20} />}
+              variant="outline"
+              colorScheme="brand"
+              size="lg"
+              w="full"
+              h="auto"
+              py={4}
+              onClick={() => window.location.href = '/chat'}
+            >
+              <VStack spacing={1}>
+                <Text fontSize="md" fontWeight="semibold">Chat with AI Assistant</Text>
+                <Text fontSize="sm" color="neutral.600">Get instant planning help</Text>
+              </VStack>
+            </Button>
+            
+            <Button
+              leftIcon={<Camera size={20} />}
+              variant="outline"
+              colorScheme="purple"
+              size="lg"
+              w="full"
+              h="auto"
+              py={4}
+              onClick={() => window.location.href = '/wedding/create'}
+            >
+              <VStack spacing={1}>
+                <Text fontSize="md" fontWeight="semibold">Start a Mood Board</Text>
+                <Text fontSize="sm" color="neutral.600">Gather inspiration and ideas</Text>
+              </VStack>
+            </Button>
+          </VStack>
         </VStack>
       </DashboardLayout>
     )

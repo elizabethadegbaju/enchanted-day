@@ -33,7 +33,7 @@ import {
   Spinner,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { Plus, Search, Filter, Phone, Mail, MoreVertical, MessageCircle, DollarSign, CheckCircle, Clock, AlertTriangle, Calendar } from 'lucide-react';
+import { Plus, Search, Filter, Phone, Mail, MoreVertical, MessageCircle, DollarSign, CheckCircle, Clock, AlertTriangle, Calendar, Sparkles, Camera } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AddVendorModal } from '@/components/vendors/AddVendorModal';
 import { ContactVendorModal } from '@/components/vendors/ContactVendorModal';
@@ -53,7 +53,7 @@ import {
 import { useWedding } from '@/contexts/WeddingContext';
 
 export default function VendorsPage() {
-  const { selectedWeddingId, isLoading: weddingLoading } = useWedding();
+  const { selectedWeddingId, isLoading: weddingLoading, weddings } = useWedding();
   const toast = useToast();
   const [vendors, setVendors] = useState<VendorListData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,8 +96,15 @@ export default function VendorsPage() {
   };
 
   useEffect(() => {
-    if (selectedWeddingId && !weddingLoading) {
-      loadVendors();
+    // When wedding context finishes loading
+    if (!weddingLoading) {
+      if (selectedWeddingId) {
+        // User has weddings, load vendors data
+        loadVendors();
+      } else {
+        // User has no weddings, stop loading immediately
+        setLoading(false);
+      }
     }
   }, [selectedWeddingId, weddingLoading]);
 
@@ -220,17 +227,52 @@ export default function VendorsPage() {
       <DashboardLayout>
         <Container maxW="7xl" py={8}>
           <VStack spacing={8} align="center" justify="center" minH="400px">
-            <Text fontSize="xl" textAlign="center">
-              Please select a wedding to manage vendors
-            </Text>
-            <Button
-              leftIcon={<Plus size={16} />}
-              colorScheme="purple"
-              size="lg"
-              onClick={() => window.location.href = '/wedding/create'}
-            >
-              Create Your First Wedding
-            </Button>
+            <VStack spacing={4} textAlign="center">
+              <Box>
+                <Sparkles size={64} color="var(--chakra-colors-brand-500)" />
+              </Box>
+              <VStack spacing={2}>
+                <Text fontSize="2xl" fontWeight="bold" color="brand.600">
+                  Welcome to Your AI Wedding Planner!
+                </Text>
+                <Text fontSize="lg" color="neutral.600" maxW="2xl">
+                  Let's start planning your magical day. Our AI assistant is here to help you every step of the way.
+                </Text>
+              </VStack>
+            </VStack>
+
+            <VStack spacing={4} w="full" maxW="md">
+              <Button
+                leftIcon={<Plus size={20} />}
+                colorScheme="brand"
+                size="lg"
+                w="full"
+                h="auto"
+                py={4}
+                onClick={() => window.location.href = '/wedding/create'}
+              >
+                <VStack spacing={1}>
+                  <Text fontSize="md" fontWeight="semibold">Create Your Wedding</Text>
+                  <Text fontSize="sm" opacity={0.9}>Set up your special day details</Text>
+                </VStack>
+              </Button>
+              
+              <Button
+                leftIcon={<MessageCircle size={20} />}
+                variant="outline"
+                colorScheme="brand"
+                size="lg"
+                w="full"
+                h="auto"
+                py={4}
+                onClick={() => window.location.href = '/chat'}
+              >
+                <VStack spacing={1}>
+                  <Text fontSize="md" fontWeight="semibold">Chat with AI Assistant</Text>
+                  <Text fontSize="sm" color="neutral.600">Get instant planning help</Text>
+                </VStack>
+              </Button>
+            </VStack>
           </VStack>
         </Container>
       </DashboardLayout>

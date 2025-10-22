@@ -22,6 +22,7 @@ interface ChatResponse {
 interface StreamingChatResponse {
   type: 'start' | 'content' | 'thinking' | 'end' | 'error';
   content?: string;
+  thinking?: string;
   agent?: string;
   suggestions?: Array<{ label: string; path: string }>;
   error?: string;

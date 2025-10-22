@@ -17,18 +17,21 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  Box,
 } from '@chakra-ui/react'
 import { useParams, useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { MoodBoardCard } from '@/components/wedding/MoodBoardCard'
 import { CreateMoodBoardModal } from '@/components/wedding/CreateMoodBoardModal'
 import { createMoodBoard, getMoodBoardsData, type MoodBoardListData } from '@/lib/wedding-data-service'
-import { Plus, Palette, Image as ImageIcon, Video, Link } from 'lucide-react'
+import { Plus, Palette, Image as ImageIcon, Video, Link, Sparkles, MessageCircle } from 'lucide-react'
 import type { MoodBoard } from '@/types'
+import { useWedding } from '@/contexts/WeddingContext'
 
 export default function MoodBoardsPage() {
   const params = useParams()
   const weddingId = params.id as string
+  const { weddings, isLoading: weddingLoading } = useWedding()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const toast = useToast()
   const router = useRouter()
@@ -37,11 +40,25 @@ export default function MoodBoardsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Check if the wedding ID is valid
+  const isValidWedding = weddings.some(wedding => wedding.id === weddingId)
+
   useEffect(() => {
-    if (weddingId) {
-      loadMoodBoardsData()
+    if (!weddingLoading) {
+      if (!isValidWedding && weddings.length > 0) {
+        // Invalid wedding ID, redirect to dashboard
+        router.push('/dashboard')
+        return
+      }
+      
+      if (weddingId && isValidWedding) {
+        loadMoodBoardsData()
+      } else if (weddings.length === 0) {
+        // No weddings found, stop loading and show welcome screen
+        setLoading(false)
+      }
     }
-  }, [weddingId])
+  }, [weddingId, weddingLoading, isValidWedding, weddings.length])
 
   const loadMoodBoardsData = async () => {
     try {
@@ -60,6 +77,74 @@ export default function MoodBoardsPage() {
   }
 
   const cardBg = useColorModeValue('white', 'gray.800')
+
+  // Loading state while checking weddings
+  if (loading || weddingLoading) {
+    return (
+      <DashboardLayout title="Mood Boards">
+        <VStack spacing={8} align="center" justify="center" minH="400px">
+          <Spinner size="xl" color="brand.500" />
+          <Text>Loading mood boards...</Text>
+        </VStack>
+      </DashboardLayout>
+    )
+  }
+
+  // No weddings found - show welcome screen
+  if (weddings.length === 0) {
+    return (
+      <DashboardLayout title="Welcome to EnchantedDay">
+        <VStack spacing={8} align="center" justify="center" minH="400px">
+          <VStack spacing={4} textAlign="center">
+            <Box>
+              <Sparkles size={64} color="var(--chakra-colors-brand-500)" />
+            </Box>
+            <VStack spacing={2}>
+              <Text fontSize="2xl" fontWeight="bold" color="brand.600">
+                Welcome to Your AI Wedding Planner!
+              </Text>
+              <Text fontSize="lg" color="neutral.600" maxW="2xl">
+                Let's start planning your magical day. Our AI assistant is here to help you every step of the way.
+              </Text>
+            </VStack>
+          </VStack>
+
+          <VStack spacing={4} w="full" maxW="md">
+            <Button
+              leftIcon={<Plus size={20} />}
+              colorScheme="brand"
+              size="lg"
+              w="full"
+              h="auto"
+              py={4}
+              onClick={() => router.push('/wedding/create')}
+            >
+              <VStack spacing={1}>
+                <Text fontSize="md" fontWeight="semibold">Create Your Wedding</Text>
+                <Text fontSize="sm" opacity={0.9}>Set up your special day details</Text>
+              </VStack>
+            </Button>
+            
+            <Button
+              leftIcon={<MessageCircle size={20} />}
+              variant="outline"
+              colorScheme="brand"
+              size="lg"
+              w="full"
+              h="auto"
+              py={4}
+              onClick={() => router.push('/chat')}
+            >
+              <VStack spacing={1}>
+                <Text fontSize="md" fontWeight="semibold">Chat with AI Assistant</Text>
+                <Text fontSize="sm" color="neutral.600">Get instant planning help</Text>
+              </VStack>
+            </Button>
+          </VStack>
+        </VStack>
+      </DashboardLayout>
+    )
+  }
 
   const handleViewMoodBoard = (moodBoard: any) => {
     // Navigate to mood board detail page
@@ -105,7 +190,6 @@ export default function MoodBoardsPage() {
         {/* Header */}
         <HStack justify="space-between" align="center">
           <VStack align="start" spacing={1}>
-            <Text fontSize="2xl" fontWeight="bold">Mood Boards</Text>
             <Text color="neutral.600">
               Collect and organize visual inspiration for your wedding
             </Text>
