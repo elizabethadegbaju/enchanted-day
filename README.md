@@ -9,7 +9,7 @@
 
 ## ✨ Overview
 
-EnchantedDay is a next-generation wedding planning platform that leverages artificial intelligence to provide couples with autonomous, intelligent, and magical wedding planning assistance. Our multi-agent AI system handles everything from vendor coordination to timeline management, letting couples focus on the joy of their special day (and ideally when we are done, this will be at a much affordable rate than letting a wedding planner handle it all).
+EnchantedDay is a next-generation wedding planning platform that leverages artificial intelligence to provide couples with autonomous, intelligent, and magical wedding planning assistance. Our AI system handles everything from vendor coordination to timeline management, letting couples focus on the joy of their special day (and ideally when we are done, this will be at a much affordable rate than letting a wedding planner handle it all).
 
 ## 🤖 AI-Powered Features
 
@@ -18,18 +18,6 @@ EnchantedDay is a next-generation wedding planning platform that leverages artif
 - Natural language wedding planning through an intelligent chat interface
 - You can opt to skip the forms or overwhelming menus and just chat with your AI planner
 - Context-aware responses that understand your wedding vision and long term memory for the AI planner.
-
-### **Multi-Agent Intelligence System**
-
-Built on the Strands AI framework and deployed in Bedrock AgentCore, our system features a sophisticated multi-agent architecture where a primary orchestration agent manages specialized sub-agents as tools:
-
-- **Vendor Management Agent**: Finds, negotiates, and coordinates with vendors ✅ *Partially Implemented*
-- **Timeline & Schedule Agent**: Optimizes planning timeline and manages deadlines ✅ *Implemented*
-- **Guest Experience Agent**: Handles RSVPs, communications, and guest coordination ✅ *Partially Implemented*
-- **Budget Optimization Agent**: Tracks expenses and finds cost-saving opportunities ✅ *Implemented*
-- **Crisis Prevention Agent**: Anticipates issues and provides contingency planning 🚧 *In Development*
-
-The primary agent intelligently routes requests to specialized sub-agents based on context, ensuring each aspect of wedding planning is handled by the most appropriate AI specialist.
 
 ### **Cultural & Personal Adaptation**
 
@@ -242,7 +230,7 @@ export const theme = extendTheme({
 
 ### AI Agent Configuration
 
-Configure AI behavior in `lib/chat-service.ts`. Our sophisticated AI architecture is built on the **Strands AI framework** and deployed in **Bedrock AgentCore**, featuring a primary orchestration agent that manages specialized sub-agents as tools. The complete agent runtime and orchestration logic is hosted at <https://github.com/elizabethadegbaju/enchantedday>.
+Configure AI behavior in `lib/chat-service.ts`. Our sophisticated AI architecture is built on the **Strands AI framework** and deployed in **Bedrock AgentCore**. The complete agent runtime and orchestration logic is hosted at <https://github.com/elizabethadegbaju/enchantedday>.
 
 A Lambda function is deployed in our backend to handle all communications with the Agent Runtime, providing seamless integration between the frontend and our multi-agent AI system.
 
