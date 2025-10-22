@@ -107,54 +107,7 @@ const MessageContent = ({ message }: { message: ChatMessage }) => {
   )
 }
 
-// Thinking Component for AI messages with visibility control
-function AIThinkingDisplay({ thinking, isVisible }: { thinking: string; isVisible: boolean }) {
-  const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: false })
-  const bgColor = useColorModeValue('purple.50', 'purple.900')
-  const borderColor = useColorModeValue('purple.200', 'purple.600')
 
-  if (!thinking.trim() || !isVisible) return null
-
-  return (
-    <Box
-      bg={bgColor}
-      border="1px solid"
-      borderColor={borderColor}
-      borderRadius="md"
-      p={3}
-      mb={2}
-      fontSize="xs"
-    >
-      <HStack
-        onClick={onToggle}
-        cursor="pointer"
-        justify="space-between"
-        _hover={{ opacity: 0.8 }}
-      >
-        <HStack spacing={2}>
-          <Brain size={14} />
-          <Text fontWeight="medium" color="purple.600">
-            AI Thinking Process
-          </Text>
-        </HStack>
-        <IconButton
-          size="xs"
-          variant="ghost"
-          icon={isOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-          aria-label="Toggle thinking"
-        />
-      </HStack>
-      
-      <Collapse in={isOpen} animateOpacity>
-        <Box mt={2} pt={2} borderTop="1px solid" borderColor={borderColor}>
-          <Text color="purple.700" fontStyle="italic" fontSize="xs">
-            {thinking}
-          </Text>
-        </Box>
-      </Collapse>
-    </Box>
-  )
-}
 
 // Markdown-like formatting component
 function FormattedText({ content }: { content: string }) {
@@ -641,13 +594,7 @@ export default function ChatPage() {
                       </Text>
                     )}
                     
-                    {/* Thinking Section for AI messages */}
-                    {message.type === 'ai' && (
-                      <AIThinkingDisplay 
-                        thinking={message.thinking || ''} 
-                        isVisible={!!message.thinking?.trim()}
-                      />
-                    )}
+
                     
                     <Card
                       bg={message.type === 'user' ? 'brand.500' : bgColor}

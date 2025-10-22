@@ -67,7 +67,7 @@ function splitIntoChunks(text: string, wordsPerChunk: number = 10): string[] {
   for (let i = 0; i < words.length; i += wordsPerChunk) {
     const chunk = words.slice(i, i + wordsPerChunk).join(' ');
     if (chunk.trim()) {
-      chunks.push(chunk + (i + wordsPerChunk < words.length ? ' ' : ''));
+      chunks.push(chunk);
     }
   }
   
@@ -252,8 +252,11 @@ async function convertBedrockStreamToSSE(stream: any): Promise<string> {
             const formattedContent = formatResponseText(processedContent.content);
             const chunks = splitIntoChunks(formattedContent, 10); // ~10 words per chunk
             
-            for (const chunk of chunks) {
-              sseOutput += `data: {"type":"content","content":"${escapeJsonString(chunk)}"}\n\n`;
+            for (let i = 0; i < chunks.length; i++) {
+              const chunk = chunks[i];
+              const isLastChunk = i === chunks.length - 1;
+              const chunkWithSpace = isLastChunk ? chunk : chunk + ' ';
+              sseOutput += `data: {"type":"content","content":"${escapeJsonString(chunkWithSpace)}"}\n\n`;
             }
           }
         }
