@@ -85,9 +85,8 @@ export const handler: Handler = async (event, context) => {
     }
     
     const input = {
-      runtimeSessionId: "dfmeoagmreaklgmrkleafremoigrmtesogmtrskhmtkrlshmt",
-      agentRuntimeArn:
-        "arn:aws:bedrock-agentcore:eu-central-1:911167904324:runtime/agents_orchestrator-OY0OdR5xr5",
+      runtimeSessionId: requestBody.sessionId || `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+      agentRuntimeArn: "arn:aws:bedrock-agentcore:eu-central-1:911167904324:runtime/agents_orchestrator-tWEBsUEND5",
       qualifier: "DEFAULT",
       payload: new TextEncoder().encode(JSON.stringify(payload)),
     };

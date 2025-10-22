@@ -123,7 +123,8 @@ export class ChatService {
       const payload: ChatRequest = {
         prompt: `Guest inquiry: ${inquiry}`,
         type: 'guest_inquiry',
-        context: { guestId, urgency }
+        context: { guestId, urgency },
+        stream: true
       };
 
       const response = await fetch(functionUrl, {
@@ -245,7 +246,8 @@ export class ChatService {
       const payload: ChatRequest = {
         prompt: message,
         wedding_id: weddingId,
-        type: 'chat'
+        type: 'chat',
+        stream: true
       };
 
       const response = await fetch(functionUrl, {
@@ -313,41 +315,38 @@ export class ChatService {
   }
 }
 
-// Utility function to parse streaming JSON responses (moved from api.ts)
-export function parseStreamingResponse(reader: ReadableStreamDefaultReader<Uint8Array>): AsyncGenerator<Record<string, unknown>, void, unknown> {
-  return (async function* () {
-    const decoder = new TextDecoder();
-    let buffer = '';
-    
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        
-        if (done) break;
-        
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith('data: ')) {
-            const data = trimmed.slice(6);
-            if (data === '[DONE]') {
-              return;
-            }
-            try {
-              yield JSON.parse(data);
-            } catch (e) {
-              console.warn('Failed to parse streaming data:', data);
+// Utility function to parse streaming JSON responses
+export function parseStreamingResponse(reader: ReadableStreamDefaultReader<Uint8Array>) {
+  return new ReadableStream({
+    start(controller) {
+      function pump(): Promise<void> {
+        return reader.read().then(({ done, value }) => {
+          if (done) {
+            controller.close();
+            return;
+          }
+          
+          const chunk = new TextDecoder().decode(value);
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                controller.enqueue(data);
+              } catch (e) {
+                // Skip invalid JSON
+              }
             }
           }
-        }
+          
+          return pump();
+        });
       }
-    } finally {
-      reader.releaseLock();
+      
+      return pump();
     }
-  })();
+  });
 }
 
 // Utility for parsing chat streaming responses
