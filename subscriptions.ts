@@ -545,6 +545,29 @@ export const onCreateTransaction = /* GraphQL */ `subscription OnCreateTransacti
   APITypes.OnCreateTransactionSubscriptionVariables,
   APITypes.OnCreateTransactionSubscription
 >;
+export const onCreateUserProfile = /* GraphQL */ `subscription OnCreateUserProfile(
+  $filter: ModelSubscriptionUserProfileFilterInput
+) {
+  onCreateUserProfile(filter: $filter) {
+    avatar_url
+    createdAt
+    created_at
+    email
+    first_name
+    id
+    last_name
+    phone
+    timezone
+    updatedAt
+    updated_at
+    user_id
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnCreateUserProfileSubscriptionVariables,
+  APITypes.OnCreateUserProfileSubscription
+>;
 export const onCreateVendor = /* GraphQL */ `subscription OnCreateVendor($filter: ModelSubscriptionVendorFilterInput) {
   onCreateVendor(filter: $filter) {
     category {
@@ -1383,6 +1406,29 @@ export const onDeleteTransaction = /* GraphQL */ `subscription OnDeleteTransacti
   APITypes.OnDeleteTransactionSubscriptionVariables,
   APITypes.OnDeleteTransactionSubscription
 >;
+export const onDeleteUserProfile = /* GraphQL */ `subscription OnDeleteUserProfile(
+  $filter: ModelSubscriptionUserProfileFilterInput
+) {
+  onDeleteUserProfile(filter: $filter) {
+    avatar_url
+    createdAt
+    created_at
+    email
+    first_name
+    id
+    last_name
+    phone
+    timezone
+    updatedAt
+    updated_at
+    user_id
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnDeleteUserProfileSubscriptionVariables,
+  APITypes.OnDeleteUserProfileSubscription
+>;
 export const onDeleteVendor = /* GraphQL */ `subscription OnDeleteVendor($filter: ModelSubscriptionVendorFilterInput) {
   onDeleteVendor(filter: $filter) {
     category {
@@ -2220,6 +2266,29 @@ export const onUpdateTransaction = /* GraphQL */ `subscription OnUpdateTransacti
 ` as GeneratedSubscription<
   APITypes.OnUpdateTransactionSubscriptionVariables,
   APITypes.OnUpdateTransactionSubscription
+>;
+export const onUpdateUserProfile = /* GraphQL */ `subscription OnUpdateUserProfile(
+  $filter: ModelSubscriptionUserProfileFilterInput
+) {
+  onUpdateUserProfile(filter: $filter) {
+    avatar_url
+    createdAt
+    created_at
+    email
+    first_name
+    id
+    last_name
+    phone
+    timezone
+    updatedAt
+    updated_at
+    user_id
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnUpdateUserProfileSubscriptionVariables,
+  APITypes.OnUpdateUserProfileSubscription
 >;
 export const onUpdateVendor = /* GraphQL */ `subscription OnUpdateVendor($filter: ModelSubscriptionVendorFilterInput) {
   onUpdateVendor(filter: $filter) {

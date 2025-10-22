@@ -533,6 +533,27 @@ export const getTransaction = /* GraphQL */ `query GetTransaction($id: ID!) {
   APITypes.GetTransactionQueryVariables,
   APITypes.GetTransactionQuery
 >;
+export const getUserProfile = /* GraphQL */ `query GetUserProfile($id: ID!) {
+  getUserProfile(id: $id) {
+    avatar_url
+    createdAt
+    created_at
+    email
+    first_name
+    id
+    last_name
+    phone
+    timezone
+    updatedAt
+    updated_at
+    user_id
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.GetUserProfileQueryVariables,
+  APITypes.GetUserProfileQuery
+>;
 export const getVendor = /* GraphQL */ `query GetVendor($id: ID!) {
   getVendor(id: $id) {
     category {
@@ -1121,6 +1142,35 @@ export const listTransactions = /* GraphQL */ `query ListTransactions(
 ` as GeneratedQuery<
   APITypes.ListTransactionsQueryVariables,
   APITypes.ListTransactionsQuery
+>;
+export const listUserProfiles = /* GraphQL */ `query ListUserProfiles(
+  $filter: ModelUserProfileFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listUserProfiles(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      avatar_url
+      createdAt
+      created_at
+      email
+      first_name
+      id
+      last_name
+      phone
+      timezone
+      updatedAt
+      updated_at
+      user_id
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListUserProfilesQueryVariables,
+  APITypes.ListUserProfilesQuery
 >;
 export const listVendorCommunications = /* GraphQL */ `query ListVendorCommunications(
   $filter: ModelVendorCommunicationFilterInput

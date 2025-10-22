@@ -566,6 +566,30 @@ export const createTransaction = /* GraphQL */ `mutation CreateTransaction(
   APITypes.CreateTransactionMutationVariables,
   APITypes.CreateTransactionMutation
 >;
+export const createUserProfile = /* GraphQL */ `mutation CreateUserProfile(
+  $condition: ModelUserProfileConditionInput
+  $input: CreateUserProfileInput!
+) {
+  createUserProfile(condition: $condition, input: $input) {
+    avatar_url
+    createdAt
+    created_at
+    email
+    first_name
+    id
+    last_name
+    phone
+    timezone
+    updatedAt
+    updated_at
+    user_id
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateUserProfileMutationVariables,
+  APITypes.CreateUserProfileMutation
+>;
 export const createVendor = /* GraphQL */ `mutation CreateVendor(
   $condition: ModelVendorConditionInput
   $input: CreateVendorInput!
@@ -1433,6 +1457,30 @@ export const deleteTransaction = /* GraphQL */ `mutation DeleteTransaction(
   APITypes.DeleteTransactionMutationVariables,
   APITypes.DeleteTransactionMutation
 >;
+export const deleteUserProfile = /* GraphQL */ `mutation DeleteUserProfile(
+  $condition: ModelUserProfileConditionInput
+  $input: DeleteUserProfileInput!
+) {
+  deleteUserProfile(condition: $condition, input: $input) {
+    avatar_url
+    createdAt
+    created_at
+    email
+    first_name
+    id
+    last_name
+    phone
+    timezone
+    updatedAt
+    updated_at
+    user_id
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteUserProfileMutationVariables,
+  APITypes.DeleteUserProfileMutation
+>;
 export const deleteVendor = /* GraphQL */ `mutation DeleteVendor(
   $condition: ModelVendorConditionInput
   $input: DeleteVendorInput!
@@ -2299,6 +2347,30 @@ export const updateTransaction = /* GraphQL */ `mutation UpdateTransaction(
 ` as GeneratedMutation<
   APITypes.UpdateTransactionMutationVariables,
   APITypes.UpdateTransactionMutation
+>;
+export const updateUserProfile = /* GraphQL */ `mutation UpdateUserProfile(
+  $condition: ModelUserProfileConditionInput
+  $input: UpdateUserProfileInput!
+) {
+  updateUserProfile(condition: $condition, input: $input) {
+    avatar_url
+    createdAt
+    created_at
+    email
+    first_name
+    id
+    last_name
+    phone
+    timezone
+    updatedAt
+    updated_at
+    user_id
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateUserProfileMutationVariables,
+  APITypes.UpdateUserProfileMutation
 >;
 export const updateVendor = /* GraphQL */ `mutation UpdateVendor(
   $condition: ModelVendorConditionInput

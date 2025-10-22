@@ -688,6 +688,22 @@ export enum WeddingType {
 }
 
 
+export type UserProfile = {
+  __typename: "UserProfile",
+  avatar_url?: string | null,
+  createdAt: string,
+  created_at?: string | null,
+  email?: string | null,
+  first_name: string,
+  id: string,
+  last_name: string,
+  phone?: string | null,
+  timezone?: string | null,
+  updatedAt: string,
+  updated_at?: string | null,
+  user_id: string,
+};
+
 export type ModelActivityFilterInput = {
   and?: Array< ModelActivityFilterInput | null > | null,
   createdAt?: ModelStringInput | null,
@@ -1008,6 +1024,30 @@ export type ModelTransactionFilterInput = {
 export type ModelTransactionTypeInput = {
   eq?: TransactionType | null,
   ne?: TransactionType | null,
+};
+
+export type ModelUserProfileFilterInput = {
+  and?: Array< ModelUserProfileFilterInput | null > | null,
+  avatar_url?: ModelStringInput | null,
+  createdAt?: ModelStringInput | null,
+  created_at?: ModelStringInput | null,
+  email?: ModelStringInput | null,
+  first_name?: ModelStringInput | null,
+  id?: ModelIDInput | null,
+  last_name?: ModelStringInput | null,
+  not?: ModelUserProfileFilterInput | null,
+  or?: Array< ModelUserProfileFilterInput | null > | null,
+  phone?: ModelStringInput | null,
+  timezone?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+  updated_at?: ModelStringInput | null,
+  user_id?: ModelStringInput | null,
+};
+
+export type ModelUserProfileConnection = {
+  __typename: "ModelUserProfileConnection",
+  items:  Array<UserProfile | null >,
+  nextToken?: string | null,
 };
 
 export type ModelVendorCommunicationFilterInput = {
@@ -1522,6 +1562,36 @@ export type CreateTransactionInput = {
   wedding_id: string,
 };
 
+export type ModelUserProfileConditionInput = {
+  and?: Array< ModelUserProfileConditionInput | null > | null,
+  avatar_url?: ModelStringInput | null,
+  createdAt?: ModelStringInput | null,
+  created_at?: ModelStringInput | null,
+  email?: ModelStringInput | null,
+  first_name?: ModelStringInput | null,
+  last_name?: ModelStringInput | null,
+  not?: ModelUserProfileConditionInput | null,
+  or?: Array< ModelUserProfileConditionInput | null > | null,
+  phone?: ModelStringInput | null,
+  timezone?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+  updated_at?: ModelStringInput | null,
+  user_id?: ModelStringInput | null,
+};
+
+export type CreateUserProfileInput = {
+  avatar_url?: string | null,
+  created_at?: string | null,
+  email?: string | null,
+  first_name: string,
+  id?: string | null,
+  last_name: string,
+  phone?: string | null,
+  timezone?: string | null,
+  updated_at?: string | null,
+  user_id: string,
+};
+
 export type ModelVendorConditionInput = {
   and?: Array< ModelVendorConditionInput | null > | null,
   contract_date?: ModelStringInput | null,
@@ -1865,6 +1935,10 @@ export type DeleteTransactionInput = {
   id: string,
 };
 
+export type DeleteUserProfileInput = {
+  id: string,
+};
+
 export type DeleteVendorInput = {
   id: string,
 };
@@ -2040,6 +2114,19 @@ export type UpdateTransactionInput = {
   vendor_id?: string | null,
   vendor_name?: string | null,
   wedding_id?: string | null,
+};
+
+export type UpdateUserProfileInput = {
+  avatar_url?: string | null,
+  created_at?: string | null,
+  email?: string | null,
+  first_name?: string | null,
+  id: string,
+  last_name?: string | null,
+  phone?: string | null,
+  timezone?: string | null,
+  updated_at?: string | null,
+  user_id?: string | null,
 };
 
 export type UpdateVendorInput = {
@@ -2366,6 +2453,23 @@ export type ModelSubscriptionTransactionFilterInput = {
   vendor_id?: ModelSubscriptionStringInput | null,
   vendor_name?: ModelSubscriptionStringInput | null,
   wedding_id?: ModelSubscriptionIDInput | null,
+};
+
+export type ModelSubscriptionUserProfileFilterInput = {
+  and?: Array< ModelSubscriptionUserProfileFilterInput | null > | null,
+  avatar_url?: ModelSubscriptionStringInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  created_at?: ModelSubscriptionStringInput | null,
+  email?: ModelSubscriptionStringInput | null,
+  first_name?: ModelSubscriptionStringInput | null,
+  id?: ModelSubscriptionIDInput | null,
+  last_name?: ModelSubscriptionStringInput | null,
+  or?: Array< ModelSubscriptionUserProfileFilterInput | null > | null,
+  phone?: ModelSubscriptionStringInput | null,
+  timezone?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
+  updated_at?: ModelSubscriptionStringInput | null,
+  user_id?: ModelSubscriptionStringInput | null,
 };
 
 export type ModelSubscriptionVendorFilterInput = {
@@ -2991,6 +3095,28 @@ export type GetTransactionQuery = {
   } | null,
 };
 
+export type GetUserProfileQueryVariables = {
+  id: string,
+};
+
+export type GetUserProfileQuery = {
+  getUserProfile?:  {
+    __typename: "UserProfile",
+    avatar_url?: string | null,
+    createdAt: string,
+    created_at?: string | null,
+    email?: string | null,
+    first_name: string,
+    id: string,
+    last_name: string,
+    phone?: string | null,
+    timezone?: string | null,
+    updatedAt: string,
+    updated_at?: string | null,
+    user_id: string,
+  } | null,
+};
+
 export type GetVendorQueryVariables = {
   id: string,
 };
@@ -3576,6 +3702,34 @@ export type ListTransactionsQuery = {
       vendor_id?: string | null,
       vendor_name?: string | null,
       wedding_id: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type ListUserProfilesQueryVariables = {
+  filter?: ModelUserProfileFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type ListUserProfilesQuery = {
+  listUserProfiles?:  {
+    __typename: "ModelUserProfileConnection",
+    items:  Array< {
+      __typename: "UserProfile",
+      avatar_url?: string | null,
+      createdAt: string,
+      created_at?: string | null,
+      email?: string | null,
+      first_name: string,
+      id: string,
+      last_name: string,
+      phone?: string | null,
+      timezone?: string | null,
+      updatedAt: string,
+      updated_at?: string | null,
+      user_id: string,
     } | null >,
     nextToken?: string | null,
   } | null,
@@ -4254,6 +4408,29 @@ export type CreateTransactionMutation = {
       wedding_website?: string | null,
     } | null,
     wedding_id: string,
+  } | null,
+};
+
+export type CreateUserProfileMutationVariables = {
+  condition?: ModelUserProfileConditionInput | null,
+  input: CreateUserProfileInput,
+};
+
+export type CreateUserProfileMutation = {
+  createUserProfile?:  {
+    __typename: "UserProfile",
+    avatar_url?: string | null,
+    createdAt: string,
+    created_at?: string | null,
+    email?: string | null,
+    first_name: string,
+    id: string,
+    last_name: string,
+    phone?: string | null,
+    timezone?: string | null,
+    updatedAt: string,
+    updated_at?: string | null,
+    user_id: string,
   } | null,
 };
 
@@ -5111,6 +5288,29 @@ export type DeleteTransactionMutation = {
   } | null,
 };
 
+export type DeleteUserProfileMutationVariables = {
+  condition?: ModelUserProfileConditionInput | null,
+  input: DeleteUserProfileInput,
+};
+
+export type DeleteUserProfileMutation = {
+  deleteUserProfile?:  {
+    __typename: "UserProfile",
+    avatar_url?: string | null,
+    createdAt: string,
+    created_at?: string | null,
+    email?: string | null,
+    first_name: string,
+    id: string,
+    last_name: string,
+    phone?: string | null,
+    timezone?: string | null,
+    updatedAt: string,
+    updated_at?: string | null,
+    user_id: string,
+  } | null,
+};
+
 export type DeleteVendorMutationVariables = {
   condition?: ModelVendorConditionInput | null,
   input: DeleteVendorInput,
@@ -5965,6 +6165,29 @@ export type UpdateTransactionMutation = {
   } | null,
 };
 
+export type UpdateUserProfileMutationVariables = {
+  condition?: ModelUserProfileConditionInput | null,
+  input: UpdateUserProfileInput,
+};
+
+export type UpdateUserProfileMutation = {
+  updateUserProfile?:  {
+    __typename: "UserProfile",
+    avatar_url?: string | null,
+    createdAt: string,
+    created_at?: string | null,
+    email?: string | null,
+    first_name: string,
+    id: string,
+    last_name: string,
+    phone?: string | null,
+    timezone?: string | null,
+    updatedAt: string,
+    updated_at?: string | null,
+    user_id: string,
+  } | null,
+};
+
 export type UpdateVendorMutationVariables = {
   condition?: ModelVendorConditionInput | null,
   input: UpdateVendorInput,
@@ -6810,6 +7033,28 @@ export type OnCreateTransactionSubscription = {
   } | null,
 };
 
+export type OnCreateUserProfileSubscriptionVariables = {
+  filter?: ModelSubscriptionUserProfileFilterInput | null,
+};
+
+export type OnCreateUserProfileSubscription = {
+  onCreateUserProfile?:  {
+    __typename: "UserProfile",
+    avatar_url?: string | null,
+    createdAt: string,
+    created_at?: string | null,
+    email?: string | null,
+    first_name: string,
+    id: string,
+    last_name: string,
+    phone?: string | null,
+    timezone?: string | null,
+    updatedAt: string,
+    updated_at?: string | null,
+    user_id: string,
+  } | null,
+};
+
 export type OnCreateVendorSubscriptionVariables = {
   filter?: ModelSubscriptionVendorFilterInput | null,
 };
@@ -7651,6 +7896,28 @@ export type OnDeleteTransactionSubscription = {
   } | null,
 };
 
+export type OnDeleteUserProfileSubscriptionVariables = {
+  filter?: ModelSubscriptionUserProfileFilterInput | null,
+};
+
+export type OnDeleteUserProfileSubscription = {
+  onDeleteUserProfile?:  {
+    __typename: "UserProfile",
+    avatar_url?: string | null,
+    createdAt: string,
+    created_at?: string | null,
+    email?: string | null,
+    first_name: string,
+    id: string,
+    last_name: string,
+    phone?: string | null,
+    timezone?: string | null,
+    updatedAt: string,
+    updated_at?: string | null,
+    user_id: string,
+  } | null,
+};
+
 export type OnDeleteVendorSubscriptionVariables = {
   filter?: ModelSubscriptionVendorFilterInput | null,
 };
@@ -8489,6 +8756,28 @@ export type OnUpdateTransactionSubscription = {
       wedding_website?: string | null,
     } | null,
     wedding_id: string,
+  } | null,
+};
+
+export type OnUpdateUserProfileSubscriptionVariables = {
+  filter?: ModelSubscriptionUserProfileFilterInput | null,
+};
+
+export type OnUpdateUserProfileSubscription = {
+  onUpdateUserProfile?:  {
+    __typename: "UserProfile",
+    avatar_url?: string | null,
+    createdAt: string,
+    created_at?: string | null,
+    email?: string | null,
+    first_name: string,
+    id: string,
+    last_name: string,
+    phone?: string | null,
+    timezone?: string | null,
+    updatedAt: string,
+    updated_at?: string | null,
+    user_id: string,
   } | null,
 };
 
