@@ -37,7 +37,7 @@ import {
 import { useState, useRef, useEffect } from 'react'
 import { useAuthenticator } from '@aws-amplify/ui-react'
 import { amplifyDataClient } from '@/lib/amplify-client'
-import { ChatService } from '@/lib/chat-service'
+import { ChatService, parseChatStream } from '@/lib/chat-service'
 import { useWedding } from '@/contexts/WeddingContext'
 
 interface ChatMessage {
@@ -115,20 +115,59 @@ export default function ChatPage() {
     setIsTyping(true)
 
     try {
-      // Use the actual Bedrock agent via Lambda function
-      const aiResponse = await ChatService.sendMessage(currentInput, selectedWeddingId || undefined)
-      
+      // Create AI message placeholder for streaming
+      const aiMessageId = (Date.now() + 1).toString()
       const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: aiMessageId,
         type: 'ai',
-        content: aiResponse,
+        content: '',
         timestamp: new Date(),
         agent: 'EnchantedDay AI Assistant',
-        // You can add dynamic actions based on the AI response if needed
-        actions: generateActionsFromResponse(aiResponse)
+        actions: []
       }
       
       setMessages((prev: ChatMessage[]) => [...prev, aiMessage])
+
+      // Use streaming for better UX
+      const stream = await ChatService.streamMessage(currentInput, selectedWeddingId || undefined)
+      const reader = stream.getReader()
+      
+      let accumulatedContent = ''
+      
+      for await (const chunk of parseChatStream(reader)) {
+        if (chunk.type === 'start') {
+          // Stream started
+          continue
+        } else if (chunk.type === 'content') {
+          // Add content chunk
+          accumulatedContent += chunk.content || ''
+          
+          // Update the AI message with accumulated content
+          setMessages((prev: ChatMessage[]) => 
+            prev.map(msg => 
+              msg.id === aiMessageId 
+                ? { ...msg, content: accumulatedContent }
+                : msg
+            )
+          )
+        } else if (chunk.type === 'end') {
+          // Stream ended - generate actions based on final content
+          const actions = generateActionsFromResponse(accumulatedContent)
+          setMessages((prev: ChatMessage[]) => 
+            prev.map(msg => 
+              msg.id === aiMessageId 
+                ? { ...msg, actions }
+                : msg
+            )
+          )
+          break
+        } else if (chunk.type === 'error') {
+          console.error('Streaming error:', chunk.error)
+          // Handle error - maybe show fallback
+          break
+        }
+      }
+      
     } catch (error) {
       console.error('Failed to get AI response:', error)
       
@@ -228,19 +267,39 @@ export default function ChatPage() {
     setIsTyping(true)
 
     try {
-      // Use the actual Bedrock agent via Lambda function
-      const aiResponse = await ChatService.sendMessage(userInput, selectedWeddingId || undefined)
-      
-      const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+      // Initialize the AI message for streaming
+      const aiMessageId = (Date.now() + 1).toString()
+      const initialAiMessage: ChatMessage = {
+        id: aiMessageId,
         type: 'ai',
-        content: aiResponse,
+        content: '',
         timestamp: new Date(),
         agent: 'EnchantedDay AI Assistant',
-        actions: generateActionsFromResponse(aiResponse)
+        actions: []
       }
       
-      setMessages((prev: ChatMessage[]) => [...prev, aiMessage])
+      setMessages((prev: ChatMessage[]) => [...prev, initialAiMessage])
+      setIsTyping(false)
+
+      // Use streaming for real-time response
+      const stream = await ChatService.streamMessage(userInput, selectedWeddingId || undefined)
+      let accumulatedContent = ''
+
+      for await (const chunk of stream) {
+        accumulatedContent += chunk
+        
+        setMessages((prev: ChatMessage[]) => 
+          prev.map(msg => 
+            msg.id === aiMessageId 
+              ? { 
+                  ...msg, 
+                  content: accumulatedContent,
+                  actions: generateActionsFromResponse(accumulatedContent)
+                }
+              : msg
+          )
+        )
+      }
     } catch (error) {
       console.error('Failed to get AI response:', error)
       

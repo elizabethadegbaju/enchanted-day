@@ -34,6 +34,9 @@ export const handler: Handler = async (event, context) => {
       };
     }
 
+    // Check if streaming is requested
+    const isStreamingRequest = requestBody.stream === true;
+
     const client = new BedrockAgentCoreClient({ region: "eu-central-1" });
     
     // Build the payload based on request type
@@ -87,16 +90,37 @@ export const handler: Handler = async (event, context) => {
 
     const command = new InvokeAgentRuntimeCommand(input);
     const response = await client.send(command);
-    const textResponse = response.response ? await response.response.transformToString() : "No response received";
 
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ response: textResponse }),
-    };
+    if (isStreamingRequest) {
+      // For streaming requests, return Server-Sent Events format
+      const textResponse = response.response ? await response.response.transformToString() : "No response received";
+      
+      // Parse the streaming response and convert to SSE format
+      const streamingBody = convertToSSEFormat(textResponse);
+      
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        },
+        body: streamingBody,
+      };
+    } else {
+      // For non-streaming requests, return JSON as before
+      const textResponse = response.response ? await response.response.transformToString() : "No response received";
+      
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ response: textResponse }),
+      };
+    }
   } catch (error) {
     console.error('Lambda function error:', error);
     return {
@@ -111,3 +135,26 @@ export const handler: Handler = async (event, context) => {
     };
   }
 };
+
+function convertToSSEFormat(bedrockResponse: string): string {
+  // Parse the Bedrock response which comes in "data: content" format
+  const lines = bedrockResponse.split('\n').filter(line => line.trim());
+  let sseOutput = '';
+  
+  // Send start event
+  sseOutput += 'data: {"type":"start","agent":"EnchantedDay AI Assistant"}\n\n';
+  
+  for (const line of lines) {
+    if (line.startsWith('data: ')) {
+      const content = line.substring(6).replace(/"/g, ''); // Remove 'data: ' and quotes
+      if (content.trim()) {
+        sseOutput += `data: {"type":"content","content":"${content.replace(/"/g, '\\"')}"}\n\n`;
+      }
+    }
+  }
+  
+  // Send end event
+  sseOutput += 'data: {"type":"end"}\n\n';
+  
+  return sseOutput;
+}

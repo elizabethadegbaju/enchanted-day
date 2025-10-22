@@ -10,6 +10,7 @@ interface ChatRequest {
   wedding_id?: string;
   type?: 'chat' | 'guest_inquiry' | 'optimization' | 'negotiation' | 'vendor_coordination';
   context?: Record<string, unknown>;
+  stream?: boolean; // Add streaming flag
 }
 
 interface ChatResponse {
@@ -45,18 +46,17 @@ interface StreamingWorkflowChunk {
 
 export class ChatService {
   /**
-   * Send a message to the Bedrock agent via Lambda function
+   * Send a message to the Bedrock agent via Lambda function (non-streaming)
    */
   static async sendMessage(prompt: string, weddingId?: string): Promise<string> {
     try {
-      // Get the current Amplify configuration
-      const config = Amplify.getConfig();
-
-      // Use the actual Function URL
-      const functionUrl = CHAT_FUNCTION_URL;      const payload: ChatRequest = {
+      const functionUrl = CHAT_FUNCTION_URL;
+      
+      const payload: ChatRequest = {
         prompt,
         wedding_id: weddingId,
-        type: 'chat'
+        type: 'chat',
+        stream: false // Non-streaming request
       };
 
       const response = await fetch(functionUrl, {
@@ -76,6 +76,39 @@ export class ChatService {
     } catch (error) {
       console.error('Error calling chat function:', error);
       throw new Error('Failed to get AI response');
+    }
+  }
+
+  /**
+   * Stream a message to the Bedrock agent via Lambda function
+   */
+  static async streamMessage(prompt: string, weddingId?: string): Promise<ReadableStream<Uint8Array>> {
+    try {
+      const functionUrl = CHAT_FUNCTION_URL;
+      
+      const payload: ChatRequest = {
+        prompt,
+        wedding_id: weddingId,
+        type: 'chat',
+        stream: true // Streaming request
+      };
+
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return response.body || new ReadableStream();
+    } catch (error) {
+      console.error('Error streaming chat function:', error);
+      throw new Error('Failed to stream AI response');
     }
   }
 
@@ -310,6 +343,54 @@ export function parseStreamingResponse(reader: ReadableStreamDefaultReader<Uint8
           }
         }
       }
+    } finally {
+      reader.releaseLock();
+    }
+  })();
+}
+
+// Utility for parsing chat streaming responses
+export function parseChatStream(reader: ReadableStreamDefaultReader<Uint8Array>): AsyncGenerator<StreamingChatResponse, void, unknown> {
+  return (async function* () {
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (trimmedLine.startsWith('data: ')) {
+            try {
+              const data = trimmedLine.substring(6); // Remove 'data: '
+              if (data === '[DONE]') {
+                yield { type: 'end' };
+                return;
+              }
+              const parsed = JSON.parse(data) as StreamingChatResponse;
+              yield parsed;
+            } catch (parseError) {
+              console.error('Error parsing chat SSE data:', parseError);
+              yield { 
+                type: 'error', 
+                error: 'Failed to parse streaming response' 
+              };
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error reading chat stream:', error);
+      yield { 
+        type: 'error', 
+        error: error instanceof Error ? error.message : 'Stream reading failed' 
+      };
     } finally {
       reader.releaseLock();
     }
