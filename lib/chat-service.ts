@@ -20,21 +20,12 @@ interface ChatResponse {
 }
 
 interface StreamingChatResponse {
-  type: 'start' | 'content' | 'thinking' | 'end' | 'error' | 'lifecycle' | 'thinking_start' | 'thinking_content' | 'thinking_end' | 'tool_use';
+  type: 'start' | 'content' | 'thinking' | 'end' | 'error';
   content?: string;
   thinking?: string;
   agent?: string;
   suggestions?: Array<{ label: string; path: string }>;
   error?: string;
-  data?: {
-    type?: string;
-    content?: string;
-    name?: string;
-    agent?: string;
-    error?: string;
-    details?: string;
-  };
-  timestamp?: string;
 }
 
 interface StrandsWorkflowResponse<T = unknown> {
@@ -359,62 +350,7 @@ export function parseStreamingResponse(reader: ReadableStreamDefaultReader<Uint8
   })();
 }
 
-// Enhanced utility for parsing chat streaming responses with lifecycle events
-export function parseChatStreamEnhanced(reader: ReadableStreamDefaultReader<Uint8Array>): AsyncGenerator<StreamingChatResponse, void, unknown> {
-  return (async function* () {
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
-
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (trimmedLine.startsWith('data: ')) {
-            try {
-              const data = trimmedLine.substring(6); // Remove 'data: '
-              if (data === '[DONE]') {
-                yield { type: 'end' };
-                return;
-              }
-              const parsed = JSON.parse(data) as StreamingChatResponse;
-              
-              // Handle enhanced event structure with backward compatibility
-              if (parsed.type === 'lifecycle' && parsed.data?.type === 'end_stream') {
-                yield { type: 'end' };
-                return;
-              }
-              
-              yield parsed;
-            } catch (parseError) {
-              console.error('Error parsing enhanced chat SSE data:', parseError);
-              yield { 
-                type: 'error', 
-                error: 'Failed to parse streaming response' 
-              };
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error reading enhanced chat stream:', error);
-      yield { 
-        type: 'error', 
-        error: error instanceof Error ? error.message : 'Stream reading failed' 
-      };
-    } finally {
-      reader.releaseLock();
-    }
-  })();
-}
-
-// Utility for parsing chat streaming responses (legacy support)
+// Utility for parsing chat streaming responses
 export function parseChatStream(reader: ReadableStreamDefaultReader<Uint8Array>): AsyncGenerator<StreamingChatResponse, void, unknown> {
   return (async function* () {
     const decoder = new TextDecoder();
