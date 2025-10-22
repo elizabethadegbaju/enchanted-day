@@ -45,25 +45,8 @@ import ReactMarkdown from 'react-markdown'
 import { amplifyDataClient } from '@/lib/amplify-client'
 import { ChatService, parseChatStream } from '@/lib/chat-service'
 import { useWedding } from '@/contexts/WeddingContext'
-
-interface ChatMessage {
-  id: string
-  type: 'user' | 'ai' | 'system'
-  content: string
-  thinking?: string
-  isStreaming?: boolean
-  timestamp: Date
-  agent?: string
-  actions?: ChatAction[]
-  metadata?: Record<string, unknown>
-}
-
-interface ChatAction {
-  id: string
-  label: string
-  type: 'navigate' | 'create' | 'update' | 'view'
-  data: Record<string, unknown>
-}
+import { handleStreamingChat, generateActionsFromResponse, ChatMessage, ChatAction } from '@/lib/streaming-utils'
+import { parseThinkingContent } from '@/lib/thinking-utils'
 
 const initialGreeting = "Hi! I'm your AI wedding planner. I'm here to help make your special day absolutely magical! ✨\n\nI can assist with:\n• Vendor coordination and negotiations\n• Timeline management and deadline tracking\n• Guest management and RSVP follow-ups\n• Budget optimization and cost tracking\n• Crisis prevention and contingency planning\n\nWhat would you like to work on today?"
 
@@ -215,19 +198,6 @@ function FormattedText({ content }: { content: string }) {
 }
 
 // Helper function to parse thinking content from agent response
-function parseThinkingContent(content: string): { thinking: string; cleanContent: string } {
-  // Look for thinking tags in the content (using dotall alternative)
-  const thinkingMatch = content.match(/<thinking>([\s\S]*?)<\/thinking>/)
-  
-  if (thinkingMatch) {
-    const thinking = thinkingMatch[1].trim()
-    const cleanContent = content.replace(/<thinking>[\s\S]*?<\/thinking>\s*/g, '').trim()
-    return { thinking, cleanContent }
-  }
-  
-  return { thinking: '', cleanContent: content }
-}
-
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -318,7 +288,7 @@ export default function ChatPage() {
           accumulatedContent += chunk.content || ''
           
           // Parse thinking content from accumulated content
-          const { thinking, cleanContent } = parseThinkingContent(accumulatedContent)
+          const { thinking, content: cleanContent } = parseThinkingContent(accumulatedContent)
           
           // Update accumulated thinking if found
           if (thinking && thinking !== accumulatedThinking) {
@@ -339,7 +309,7 @@ export default function ChatPage() {
           )
         } else if (chunk.type === 'end') {
           // Parse final content to ensure thinking is separated
-          const { thinking, cleanContent } = parseThinkingContent(accumulatedContent)
+          const { thinking, content: cleanContent } = parseThinkingContent(accumulatedContent)
           
           // Stream ended - generate actions based on final clean content and mark as complete
           const actions = generateActionsFromResponse(cleanContent)
@@ -389,29 +359,6 @@ export default function ChatPage() {
     } finally {
       setIsTyping(false)
     }
-  }
-
-  const generateActionsFromResponse = (response: string): ChatAction[] => {
-    // You can enhance this to parse the AI response and generate relevant actions
-    const actions: ChatAction[] = []
-    
-    if (response.toLowerCase().includes('wedding') || response.toLowerCase().includes('create')) {
-      actions.push({ id: '1', label: 'Create Wedding', type: 'navigate', data: { path: '/wedding/create' } })
-    }
-    if (response.toLowerCase().includes('dashboard') || response.toLowerCase().includes('overview')) {
-      actions.push({ id: '2', label: 'View Dashboard', type: 'navigate', data: { path: '/dashboard' } })
-    }
-    if (response.toLowerCase().includes('vendor')) {
-      actions.push({ id: '3', label: 'Manage Vendors', type: 'navigate', data: { path: '/vendors' } })
-    }
-    if (response.toLowerCase().includes('guest')) {
-      actions.push({ id: '4', label: 'Manage Guests', type: 'navigate', data: { path: '/guests' } })
-    }
-    if (response.toLowerCase().includes('budget')) {
-      actions.push({ id: '5', label: 'View Budget', type: 'navigate', data: { path: '/budget' } })
-    }
-    
-    return actions
   }
 
   const generateAIResponse = (userInput: string): { content: string; agent: string; actions: ChatAction[] } => {
@@ -509,7 +456,7 @@ export default function ChatPage() {
           accumulatedContent += chunk.content || ''
           
           // Parse thinking content from accumulated content
-          const { thinking, cleanContent } = parseThinkingContent(accumulatedContent)
+          const { thinking, content: cleanContent } = parseThinkingContent(accumulatedContent)
           
           // Update accumulated thinking if found
           if (thinking && thinking !== accumulatedThinking) {
@@ -529,7 +476,7 @@ export default function ChatPage() {
           )
         } else if (chunk.type === 'end') {
           // Parse final content to ensure thinking is separated
-          const { thinking, cleanContent } = parseThinkingContent(accumulatedContent)
+          const { thinking, content: cleanContent } = parseThinkingContent(accumulatedContent)
           
           const actions = generateActionsFromResponse(cleanContent)
           setMessages((prev: ChatMessage[]) => 

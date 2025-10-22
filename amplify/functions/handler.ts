@@ -4,6 +4,48 @@ import {
 } from "@aws-sdk/client-bedrock-agentcore";
 import { Handler } from "aws-lambda";
 
+// Import shared utilities to eliminate duplication
+function parseThinkingContent(content: string): { thinking: string; content: string } {
+  const thinkingRegex = /<thinking>([\s\S]*?)<\/thinking>/g;
+  const thinkingMatches = content.match(thinkingRegex);
+  
+  let thinking = '';
+  let cleanContent = content;
+  
+  if (thinkingMatches) {
+    thinking = thinkingMatches
+      .map(match => match.replace(/<\/?thinking>/g, '').trim())
+      .join(' ');
+    
+    cleanContent = content.replace(thinkingRegex, '').trim();
+  }
+  
+  return { thinking, content: cleanContent };
+}
+
+function escapeJsonString(str: string): string {
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+}
+
+function splitIntoChunks(text: string, wordsPerChunk: number = 10): string[] {
+  const words = text.split(' ');
+  const chunks: string[] = [];
+  
+  for (let i = 0; i < words.length; i += wordsPerChunk) {
+    const chunk = words.slice(i, i + wordsPerChunk).join(' ');
+    if (chunk.trim()) {
+      chunks.push(chunk + (i + wordsPerChunk < words.length ? ' ' : ''));
+    }
+  }
+  
+  return chunks;
+}
+
 export const handler: Handler = async (event, context) => {
   // Common CORS headers to use across all responses
   const corsHeaders = {
@@ -170,7 +212,7 @@ async function convertBedrockStreamToSSE(stream: any): Promise<string> {
         
         if (content.trim()) {
           // Process content to extract thinking and main content
-          const processedContent = processAIContent(content);
+          const processedContent = parseThinkingContent(content);
           
           if (processedContent.thinking) {
             sseOutput += `data: {"type":"thinking","content":"${escapeJsonString(processedContent.thinking)}"}\n\n`;
@@ -197,51 +239,4 @@ async function convertBedrockStreamToSSE(stream: any): Promise<string> {
     sseOutput += `data: {"type":"error","error":"Stream processing failed"}\n\n`;
     return sseOutput;
   }
-}
-
-function processAIContent(content: string): { thinking?: string; content?: string } {
-  // Extract all thinking blocks
-  const thinkingRegex = /<thinking>(.*?)<\/thinking>/gs;
-  const thinkingMatches = content.match(thinkingRegex);
-  
-  let thinking: string | undefined;
-  let mainContent = content;
-  
-  if (thinkingMatches) {
-    // Combine all thinking content
-    thinking = thinkingMatches
-      .map(match => match.replace(/<\/?thinking>/g, '').trim())
-      .join(' ');
-    
-    // Remove all thinking blocks from main content
-    mainContent = content.replace(thinkingRegex, '').trim();
-  }
-  
-  return {
-    thinking,
-    content: mainContent || undefined
-  };
-}
-
-function splitIntoChunks(text: string, wordsPerChunk: number = 10): string[] {
-  const words = text.split(' ');
-  const chunks: string[] = [];
-  
-  for (let i = 0; i < words.length; i += wordsPerChunk) {
-    const chunk = words.slice(i, i + wordsPerChunk).join(' ');
-    if (chunk.trim()) {
-      chunks.push(chunk + (i + wordsPerChunk < words.length ? ' ' : ''));
-    }
-  }
-  
-  return chunks;
-}
-
-function escapeJsonString(str: string): string {
-  return str
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t');
 }
